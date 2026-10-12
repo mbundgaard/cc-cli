@@ -75,9 +75,14 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 - No arbitrary endpoint command, automatic discovery, config writes, release or publication.
 - `cc server-version [--api-version v1|v2] [--dry-run] [--quiet]` sends one explicit read;
   no fallback. Dry-run is offline. `cc version` still means the installed CLI version.
+- Explicit version reads establish a local catalogue generation. Release changes archive
+  prior observations; no automatic polling. `cc catalogue import --file <swagger.json>`
+  pins documentation offline. `catalogue compare <operation>` compares observed types/paths,
+  not record values. Missing observations never prove missing fields or safe writes.
 - Synthetic loopback tests and installed-package checks do not prove live CC access.
 
 [CLI](docs/CLI.md) | [Authentication](docs/AUTHENTICATION.md) |
+[Field catalogue](docs/CATALOGUE.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)
 

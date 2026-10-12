@@ -2,6 +2,7 @@ import { Command, Option } from 'commander';
 import { baseUrl, type State, StateStore } from './state.js';
 import { executeQuery, type PreparedRequest, type QueryOptions } from './requests.js';
 import { CliError, Exit } from './output.js';
+import { prepareLearning } from './catalogue-commands.js';
 
 export const readDefinitions = [
   { id: 'server-version', command: 'server-version', summary: 'Deployed Simphony Enterprise and CC API releases',
@@ -33,5 +34,6 @@ export function registerReads(root: Command, store: StateStore, setExit: (code: 
   readOptions(root.command('server-version').description('[read-only][network] Deployed Enterprise and CC API versions, not this CLI version'))
     .addHelpText('after', '\nOne POST with an empty JSON body. v2 by default; explicit v1 is supported.\nNo discovery, retries, fallback or configuration changes. Dry-run stays offline.\nSuccessful reads use the shared due-token renewal and verbatim delivery lifecycle.\n')
     .action(async options => { setExit(await executeQuery('getReleaseVersions', store, options,
-      (state, input) => buildReadRequest('server-version', state, input, options))); });
+      (state, input) => buildReadRequest('server-version', state, input, options), store.directory, undefined,
+      async state => prepareLearning(store.directory, state, 'server-version', options.apiVersion))); });
 }

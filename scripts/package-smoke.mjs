@@ -14,7 +14,7 @@ function npmRun(args) {
 }
 try {
   const [packed] = JSON.parse(npmRun(['pack', '--ignore-scripts', '--json', '--pack-destination', temp]));
-  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md']);
+  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md']);
   for (const f of packed.files) assert.ok(allow.has(f.path) || /^dist\/[a-z-]+\.(?:js|d\.ts)$/.test(f.path), `Unexpected package file: ${f.path}`);
   npmRun(['install', '--prefix', temp, '--ignore-scripts', '--no-audit', '--no-fund', path.join(temp, packed.filename)]);
   const shim = path.join(temp, 'node_modules', '.bin', process.platform === 'win32' ? 'cc.cmd' : 'cc');
@@ -22,7 +22,7 @@ try {
   const v = run(['--version']); assert.equal(v.status, 0, v.stderr); assert.equal(v.stdout.trim(), pkg.version);
   const help = run(['--help']); assert.equal(help.status, 0); assert.match(help.stdout.replace(/\s+/g, ' '), /Safe authentication and explicit read-only tasks/);
   assert.doesNotMatch(help.stdout, /--state-dir|--insecure|test-read|pos-dimensions/);
-  for (const args of [['auth', 'config', '--help'], ['auth', 'login', '--help'], ['auth', 'refresh', '--help'], ['auth', 'restore', '--help'], ['company', '--help'], ['version', '--help'], ['server-version', '--help']]) assert.equal(run(args).status, 0);
+  for (const args of [['auth', 'config', '--help'], ['auth', 'login', '--help'], ['auth', 'refresh', '--help'], ['auth', 'restore', '--help'], ['company', '--help'], ['version', '--help'], ['server-version', '--help'], ['catalogue', '--help'], ['catalogue', 'import', '--help']]) assert.equal(run(args).status, 0);
   const endpoints = run(['endpoints']); assert.equal(endpoints.status, 0); assert.deepEqual(JSON.parse(endpoints.stdout).data.dataEndpoints.map(item => item.id), ['server-version']);
   for (const name of ['test-read', 'getHierarchy', 'pos-dimensions']) { const r = run([name]); assert.equal(r.status, 6); assert.equal(r.stdout, ''); }
   const module = name => pathToFileURL(path.join(temp, 'node_modules/@muneris/cc-cli/dist', name)).href;

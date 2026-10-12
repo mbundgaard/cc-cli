@@ -5,6 +5,7 @@ import { StateStore, baseUrl, validateCompanies, tokenSummary, activeState, empt
 import { registerCompanies, loginCompany, refreshCompanies } from './companies.js';
 import { checkForUpdates } from './updates.js';
 import { registerReads, readDefinitions } from './read-commands.js';
+import { registerCatalogue } from './catalogue-commands.js';
 import { CliError, Exit, localResult, reportError } from './output.js';
 const version = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
 function network(command: Command): Command {
@@ -26,6 +27,7 @@ export function createProgram(store = new StateStore(), setExit: (code: number) 
   root.action(() => { root.outputHelp(); });
   registerCompanies(root, store);
   registerReads(root, store, setExit);
+  registerCatalogue(root, store, readDefinitions);
   root.command('version').description('[read-only] Installed version; --check explicitly queries npm')
     .option('--check', 'Explicit five-second npm lookup; never installs')
     .addHelpText('after', '\nCC is unpublished; unavailable does not mean up to date.\nNo credentials go to npm. Ask before updating. Support: support@muneris.dk.\n')

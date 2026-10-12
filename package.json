@@ -6,9 +6,22 @@
   "type": "module",
   "license": "MIT",
   "author": "Muneris",
-  "bin": { "cc": "bin/cc.js" },
-  "files": ["bin/", "dist/", "README.md", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "docs/"],
-  "engines": { "node": ">=22" },
+  "bin": {
+    "cc": "bin/cc.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "docs/"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc",
     "test": "npm run build && node --test tests/*.test.mjs",
@@ -16,6 +29,13 @@
     "prepack": "npm run build",
     "start": "node bin/cc.js"
   },
-  "dependencies": { "commander": "^14.0.0", "tough-cookie": "^6.0.0" },
-  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.9.0" }
+  "dependencies": {
+    "commander": "^14.0.0",
+    "stream-json": "^3.7.0",
+    "tough-cookie": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
 }

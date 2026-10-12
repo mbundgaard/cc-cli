@@ -17,6 +17,9 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
 - src/responses.ts: internal byte-exact bounded delivery, never used for token responses.
 - src/json.ts: exact input numbers; not a response decoder.
+- src/catalogue.ts: bounded streaming structural observation and locked versioned metadata.
+- src/catalogue-commands.ts: explicit local Swagger import/comparison and post-delivery learning.
+  Uses stream-json tokens without assembling values. JSON observation never rewrites output.
 - src/updates.ts: explicit npm check and internal future-read advisory notifier.
 
 CC profile schema 1 requires product cc as well as the schema-2 registry. This intentionally

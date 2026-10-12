@@ -8,6 +8,10 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc --help` | Local help |
 | `cc endpoints` | Local hardcoded read inventory and v1/v2 mappings |
 | `cc server-version [--api-version v1\|v2] [--dry-run] [--quiet]` | Explicit deployed Enterprise/CC API versions; default v2, no fallback |
+| `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
+| `cc catalogue show` | Local documentation, generations and archives |
+| `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
+| `cc catalogue changes <operation> --archive <id> [--api-version v1\|v2]` | Archived versus current observations; absence is not removal |
 | `cc version` | Local installed version |
 | `cc version --check` | Explicit five-second advisory npm lookup, no installation |
 | `cc auth status` | Local token presence/expiry, active key, pending/schedule status |
@@ -46,5 +50,7 @@ once-daily advisory notifier; auth/local/help do not trigger it.
 
 Version contract: POST `/config/sim/v2/getReleaseVersions` (preferred), or explicit
 `/config/sim/v1/getReleaseVersions`. Returns `simphonyEnterpriseVersion` and `C&CVersion`.
+Successful version responses establish a [catalogue](CATALOGUE.md) generation locally.
+Changes archive prior observations; no implicit version lookup or specification download.
 These identify application/schema compatibility and API releases, not a complete database
 schema. Unknown response fields are preserved; no response-field allowlist is enforced.

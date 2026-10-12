@@ -24,7 +24,7 @@ async function protectDirectory(directory: string): Promise<void> {
   await execute(path.join(system, 'icacls.exe'), [directory, '/inheritance:r', '/grant:r', `*${sid}:(OI)(CI)F`], { timeout: 10_000, windowsHide: true });
 }
 
-type Delivery = { kind: 'inline'; body: Buffer } | {
+export type Delivery = { kind: 'inline'; body: Buffer } | {
   kind: 'file'; path: string; uri: string; bytes: number; lines: number; sha256: string;
 };
 
@@ -97,7 +97,8 @@ export class ResponseCollector extends Writable {
 
 // The one data-response boundary for current and future task areas. Output-mode
 // switches, agent detection, token persistence and response interpretation do not belong here.
-export async function deliverResponse(input: HttpRequest, operation: string, baseDirectory = stateDirectory(), quiet = false): Promise<number> {
+export type DeliveryObserver = (response: { status: number; delivery: Delivery }) => Promise<void>;
+export async function deliverResponse(input: HttpRequest, operation: string, baseDirectory = stateDirectory(), quiet = false, observer?: DeliveryObserver): Promise<number> {
   const collector = new ResponseCollector(baseDirectory);
   const cancellation = new AbortController();
   const cancel = () => cancellation.abort();
@@ -121,6 +122,12 @@ export async function deliverResponse(input: HttpRequest, operation: string, bas
     try {
       await new Promise<void>((resolve, reject) => process.stdout.write(output, error => error ? reject(error) : resolve()));
     } catch { throw new CliError(1, 'Cannot write CC response delivery to stdout', delivery.kind === 'file' ? `Completed response retained at ${delivery.path}` : undefined); }
+    // Learning is a separate, best-effort side channel AFTER unchanged output delivery.
+    // Never turn a metadata failure into a misleading HTTP failure or a retry.
+    if (observer && response.status >= 200 && response.status < 300) {
+      try { await observer({ status: response.status, delivery }); }
+      catch { process.stderr.write('[cc catalogue] Metadata was not saved; response delivery and HTTP result are unchanged. Inspect the local catalogue before further learning.\n'); }
+    }
     return httpExit(response.status);
   } catch (error) {
     if (!published) await collector.discard();

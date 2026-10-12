@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add explicit offline Swagger imports pinned by SHA-256, documented/observed comparisons,
+  streaming field-only learning, company/environment/account and v1/v2 isolation, and
+  archived Enterprise/CC-release generations. No hidden version queries or generated calls.
+- Keep metadata learning failures separate from original response delivery and HTTP status.
+
 - Scaffold private @muneris/cc-cli with Node22+/TypeScript, cc shim, auth/company/local
   commands, offline synthetic tests and installed-package checks.
 - Port BI PKCE/cookie-preserving ID-token auth, explicit company registry, staged config,

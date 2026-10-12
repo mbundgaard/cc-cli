@@ -29,6 +29,10 @@ Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
   without authorization. Never copy real state/customer data into source or fixtures.
 - Help/local commands stay offline; version --check explicitly queries npm without secrets.
   Internal daily notifier is ready for future reads but does not run during auth/local work.
+- Catalogue imports are explicit/offline; hardcode calls, never generate executable routes.
+  Keep documented and observed fields separate, v1/v2 separate, and archive release changes.
+  Learn types/paths only from successful requested reads; never save record values or infer
+  writability, completeness, removal from absence, or an integer type from null.
 - Keep help/docs/tests/package allowlist synchronized. Node22+, ESM, UTF-8/LF, two spaces.
 - Before ready: npm test; npm run test:package; node bin/cc.js --help.
 - Support support@muneris.dk. Package remains private/unpublished.

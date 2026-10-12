@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { CliError, Exit, localResult } from './output.js';
 import { baseUrl, bearerToken, stateDirectory, StateStore, activeState, type State } from './state.js';
-import { deliverResponse } from './responses.js';
+import { deliverResponse, type DeliveryObserver } from './responses.js';
 import { refreshCompanies } from './companies.js';
 import { notifyForUpdates } from './updates.js';
 import { readFileSync } from 'node:fs';
@@ -48,7 +48,8 @@ export interface PreparedRequest {
 // preflight validation, renewal, unchanged delivery and advisory update notices.
 export async function executeQuery(operation: string, source: State | StateStore, options: QueryOptions,
   build: (state: State, input: Record<string, unknown>) => PreparedRequest,
-  responseDirectory = source instanceof StateStore ? source.directory : stateDirectory(), notifyUpdate = notifyForUpdates): Promise<number> {
+  responseDirectory = source instanceof StateStore ? source.directory : stateDirectory(), notifyUpdate = notifyForUpdates,
+  prepareObserver?: (state: State, request: PreparedRequest) => Promise<DeliveryObserver>): Promise<number> {
   const store = source instanceof StateStore ? source : undefined;
   const registry = store ? await store.loadCompanies() : undefined;
   const selected = registry?.activeCompany;
@@ -67,8 +68,9 @@ export async function executeQuery(operation: string, source: State | StateStore
     built = build(state, input);
   }
   const token = bearerToken(state); // CC id_token, never access_token.
+  const observer = prepareObserver ? await prepareObserver(state, built) : undefined;
   const code = await deliverResponse({ ...built, headers: { ...built.headers, Authorization: `Bearer ${token}` },
-    body: JSON.stringify(built.body), timeoutMs: (options.timeout ?? 30) * 1000 }, operation, responseDirectory, options.quiet);
+    body: JSON.stringify(built.body), timeoutMs: (options.timeout ?? 30) * 1000 }, operation, responseDirectory, options.quiet, observer);
   if (store && code === Exit.ok && !options.quiet) {
     try { await notifyUpdate(store.directory, version); } catch { /* Advisory only. */ }
   }
