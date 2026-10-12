@@ -2,8 +2,8 @@
 
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 
-- Auth/company, version, hierarchy, menu-master, KDS-display, order-device and workstation
-  reads; no writes. Workstation responses may contain sensitive nested peripheral settings;
+- Auth/company, version, hierarchy, menu-master, KDS-display, order-device, workstation and
+  order-type names/parameters reads; no writes. Workstation responses may contain sensitive nested peripheral settings;
   preserve exact bytes, keep exports private and never paste credentials into reports.
   Explicit scope per reviewed endpoint; no comparison workflow, discovery or related reads.
   Authorized logins/version/location-node metadata reads succeeded. Live refresh and other

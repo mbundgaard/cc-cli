@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add independent order-type names and parameter reads (v2/v1), explicit hierarchy criteria
+  scope and shared controls. Preserve v1 route casing, names lineNum and raw option/mask
+  lengths; no companion reads, inheritance resolution or workflow logic.
+
 - Add workstation reads (v2/v1), required location hierUnitId in the request body and shared
   controls. Preserve sensitive nested settings verbatim without persisting values in the
   field catalogue; no automatic peripheral or service-host reads. No live workstation calls.

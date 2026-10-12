@@ -46,8 +46,8 @@ configuration alone does not establish remote CI execution. No publish workflow.
 Review individual CC endpoint contracts/version support before implementing data commands.
 The guide includes v1/v2, hierarchy scopes, translated strings, options and explicit
 pagination. Do not copy BI location/date bodies or infer universal paths/media types.
-Hierarchy tree/node, menu-master, KDS-display, order-device and workstation reads are implemented
-and synthetic-tested.
+Hierarchy tree/node, menu-master, KDS-display, order-device, workstation and order-type
+names/parameters reads are implemented and synthetic-tested.
 Only narrowly authorized location-node metadata reads have been exercised live. No broad
 endpoint generation, comparison orchestration or implicit schema fetches.
 Separate any future configuration writes clearly and require explicit authorization;

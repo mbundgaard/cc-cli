@@ -15,6 +15,10 @@ export const cases = [
     v1: '/config/sim/v1/devices/getOrderDevices', v2: '/config/sim/v2/devices/getOrderDevices'},
   {id: 'workstations', command: ['workstations', 'list'], mode: 'body',
     v1: '/config/sim/v1/devices/getWorkstations', v2: '/config/sim/v2/devices/getWorkstations'},
+  {id: 'order-types', command: ['order-types', 'list'], mode: 'criteria',
+    v1: '/config/sim/v1/setup/getordertypenames', v2: '/config/sim/v2/setup/getOrderTypeNames'},
+  {id: 'order-type-parameters', command: ['order-types', 'parameters', 'list'], mode: 'criteria',
+    v1: '/config/sim/v1/setup/getOrderTypeParameters', v2: '/config/sim/v2/setup/getOrderTypeParameters'},
 ];
 const profile = {schemaVersion: 1, product: 'cc', auth: {apiUrl: 'https://cc.example.invalid', orgName: 'Synthetic'}};
 async function ready(s) {

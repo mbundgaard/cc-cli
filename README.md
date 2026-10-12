@@ -11,10 +11,12 @@ Hierarchy tree/node reads require explicit organization-wide acknowledgement; me
 master reads require an explicit hierarchy unit; KDS display reads require an explicit
 location hierarchy unit. Order-device reads require an explicit RVC hierarchy unit.
 Workstation reads require an explicit location hierarchy unit in the request body.
-Calls are hardcoded; record fields are
-extensible. No writes.
+Order-type names and parameters are separate hierarchy-scoped reads.
+Calls are hardcoded; record fields are extensible. Shared server-side filtering, sorting,
+projection and explicit paging are documented in [Read controls](docs/READS.md). No writes.
 Authorized logins, version reads and location-node metadata reads succeeded. Live refresh,
-menu-master and KDS-display reads remain unverified; permissions are endpoint-specific.
+menu-master, KDS-display, order-device, workstation and order-type reads remain unverified;
+permissions are endpoint-specific.
 
 ## Development
 
@@ -92,6 +94,7 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 [Field catalogue](docs/CATALOGUE.md) | [Shared read controls](docs/READS.md) |
 [Hierarchy](docs/HIERARCHY.md) | [KDS displays](docs/KDS-DISPLAYS.md) |
 [Order devices](docs/ORDER-DEVICES.md) | [Workstations](docs/WORKSTATIONS.md) |
+[Order types](docs/ORDER-TYPES.md) |
 [Menu item masters](docs/MENU-ITEM-MASTERS.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)

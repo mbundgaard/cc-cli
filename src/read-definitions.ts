@@ -34,5 +34,13 @@ export const readDefinitions = [
     paths: { v1: '/config/sim/v1/devices/getWorkstations', v2: '/config/sim/v2/devices/getWorkstations' },
     scope: 'location', scopeMode: 'body', scopeLabel: 'Location hierarchy unit ID (or hierUnitId in JSON); never a workstation number',
     help: 'No workstation class, RVC, peripheral or service-host lookup. Nested devices may contain certificate/password settings: review projections and keep responses private. No redaction alters returned bytes.' },
+  { id: 'order-types', command: 'order-types list', summary: 'Order type names at one explicit hierarchy unit',
+    paths: { v1: '/config/sim/v1/setup/getordertypenames', v2: '/config/sim/v2/setup/getOrderTypeNames' },
+    scope: 'definition-hierarchy', scopeMode: 'criteria', scopeLabel: 'Enterprise, zone or location hierarchy unit ID; local scope compiled into searchCriteria',
+    help: 'Names use lineNum in the documented response, not an invented objectNum alias. Parameters are a separate explicit task. No ancestor traversal or inherited-value resolution.' },
+  { id: 'order-type-parameters', command: 'order-types parameters list', summary: 'Order type parameters at one explicit hierarchy unit',
+    paths: { v1: '/config/sim/v1/setup/getOrderTypeParameters', v2: '/config/sim/v2/setup/getOrderTypeParameters' },
+    scope: 'definition-hierarchy', scopeMode: 'criteria', scopeLabel: 'Enterprise, zone, location or RVC hierarchy unit ID; local scope compiled into searchCriteria',
+    help: 'Separate from names: preserve masks/options, KDS highlight references and unknown fields unchanged. No automatic name lookup, tax/payment calculation or configuration writes.' },
 ] as const satisfies readonly ReadDefinition[];
 export type ReadId = typeof readDefinitions[number]['id'];

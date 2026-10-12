@@ -1,6 +1,6 @@
 # CC CLI
 
-Authentication and explicit deployment-version, hierarchy, menu-master, KDS-display, order-device and workstation reads.
+Authentication and explicit deployment-version, hierarchy, menu-master, KDS-display, order-device, workstation and order-type reads.
 No configuration writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
@@ -15,6 +15,8 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc kds-displays list --hier-unit-id <location-id> [controls]` | One explicitly scoped KDS-display page; v2 preferred, explicit v1 |
 | `cc order-devices list --hier-unit-id <rvc-id> [controls]` | One explicitly scoped order-device page; v2 preferred, explicit v1 |
 | `cc workstations list --hier-unit-id <location-id> [controls]` | One location's workstation page; hierUnitId is sent in JSON |
+| `cc order-types list --hier-unit-id <id> [controls]` | One scoped order-type name page; v1 lower-case route retained |
+| `cc order-types parameters list --hier-unit-id <id> [controls]` | One scoped order-type parameter page; no implicit names read |
 | `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
 | `cc catalogue show` | Local documentation, generations and archives |
 | `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
@@ -49,6 +51,8 @@ scope transport and one-page execution. [KDS displays](KDS-DISPLAYS.md) uses loc
 criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fetches
 related records automatically. [Workstations](WORKSTATIONS.md) uses a required location
 hierUnitId body parameter; nested device settings may be sensitive.
+[Order types](ORDER-TYPES.md) exposes names and parameters as separate explicit calls;
+no inheritance resolution or implicit companion reads.
 
 [Hierarchy](HIERARCHY.md) documents JSON/file/stdin, explicit paging, filters/projections,
 version-specific language controls and scope acknowledgement.
