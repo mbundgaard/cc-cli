@@ -55,7 +55,9 @@ that every record has those fields. No automatic extra requests fill gaps.
 Comparisons identify:
 - observed fields not in the pinned documentation;
 - incompatible observed non-null JSON types;
-- documented fields not yet observed, NOT confirmed missing or removed.
+- documented fields not yet observed, NOT confirmed missing or removed;
+- indeterminate descendants below recursive/open schema boundaries, not falsely labelled
+  undocumented. Recursive definitions are bounded instead of expanded indefinitely.
 
 Null alone establishes no type. Empty arrays do not establish element fields. Integer
 versus number constraints, requiredness, defaults, ranges, enum values and writability

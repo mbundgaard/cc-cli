@@ -20,7 +20,7 @@ export async function prepareLearning(directory: string, state: State, operation
     await catalogue.observe(target, view.environment!.current.id, contract, fields, projection, view.document?.sha256);
   };
 }
-export function registerCatalogue(root: Command, store: StateStore, definitions: readonly { id: string; paths: { v1: string; v2: string } }[]): void {
+export function registerCatalogue(root: Command, store: StateStore, definitions: readonly { id: string; paths: { v1?: string; v2?: string } }[]): void {
   const catalogue = new CatalogueStore(store.directory);
   const group = root.command('catalogue').description('[local] Versioned documented/observed field metadata; never record values or write permission');
   group.addHelpText('after', '\nAll catalogue commands stay offline. Import a locally supplied Swagger 2 file explicitly.\nOnly hardcoded implemented calls are imported; schemas never create executable endpoints.\nRun server-version explicitly to detect release changes and archive old observations.\nUnobserved is not absent. Null alone establishes no type. No writability is inferred.\n');

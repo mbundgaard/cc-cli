@@ -18,8 +18,9 @@ export async function setup(t, handler = (_, res) => { res.writeHead(500); res.e
   const url = `http://127.0.0.1:${server.address().port}`;
   const store = new StateStore(directory);
   await store.save({ schemaVersion: 1, product: 'cc', auth: { authUrl: url, apiUrl: url, clientId, orgName: 'test-enterprise', username: 'Synthetic_User' } });
-  const run = args => new Promise((resolve, reject) => {
+  const run = (args, input = '') => new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['tests/cli-runner.mjs', directory, ...args]);
+    child.stdin.end(input);
     const out = [], err = [];
     child.stdout.on('data', b => out.push(b)); child.stderr.on('data', b => err.push(b));
     child.on('error', reject); child.on('close', code => resolve({ code, stdout: Buffer.concat(out).toString(), stderr: Buffer.concat(err).toString() }));

@@ -7,7 +7,8 @@ Implemented: PKCE/cookie-preserving login, BI-style ID-token authentication, iso
 company profiles, staged configuration, duplicate-login avoidance, expiry/renewal,
 locked atomic persistence/recovery, safe status and explicit version checks.
 `cc server-version` reads deployed Enterprise and CC API versions (v2 default, explicit v1).
-No configuration record reads or writes yet. One authorized UAT login and one v1 version
+Hierarchy tree/node reads require explicit organization-wide acknowledgement. No writes.
+One authorized UAT login and one v1 version
 read succeeded; live refresh and configuration-data permissions remain unverified.
 
 ## Development
@@ -82,7 +83,7 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 - Synthetic loopback tests and installed-package checks do not prove live CC access.
 
 [CLI](docs/CLI.md) | [Authentication](docs/AUTHENTICATION.md) |
-[Field catalogue](docs/CATALOGUE.md) |
+[Field catalogue](docs/CATALOGUE.md) | [Hierarchy](docs/HIERARCHY.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)
 

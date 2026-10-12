@@ -1,6 +1,6 @@
 # CC CLI
 
-Authentication and explicit deployment-version reads; no configuration writes or arbitrary endpoints.
+Authentication, explicit deployment-version and hierarchy reads; no configuration writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
 | Command | Effect |
@@ -8,6 +8,8 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc --help` | Local help |
 | `cc endpoints` | Local hardcoded read inventory and v1/v2 mappings |
 | `cc server-version [--api-version v1\|v2] [--dry-run] [--quiet]` | Explicit deployed Enterprise/CC API versions; default v2, no fallback |
+| `cc hierarchy list --organization-wide [controls]` | One explicit hierarchy-tree page; v2 preferred, explicit v1 |
+| `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
 | `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
 | `cc catalogue show` | Local documentation, generations and archives |
 | `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
@@ -36,6 +38,10 @@ history/process listings; never print actual credentials in reports.
 expiry, unknown lifetimes and recovery. `server-version` uses an empty JSON body and the
 shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omits tokens;
 `--timeout` uses the same bounds as auth. Internal test-only commands are not packaged.
+
+[Hierarchy](HIERARCHY.md) documents JSON/file/stdin, explicit paging, filters/projections,
+version-specific language controls and scope acknowledgement. Run `server-version` first
+for the catalogue; dry-run does not need tokens or a catalogue generation.
 
 Local successes use `{ "ok": true, "command": "...", "data": ... }`. Diagnostics and
 errors go to stderr. Explicit refresh can return a summary with a nonzero exit: inspect

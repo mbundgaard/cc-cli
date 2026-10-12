@@ -72,14 +72,15 @@ export function documentedFields(schema: unknown, document: Record<string, any>)
   visit(schema, '', new Set(), 0);
   return fields;
 }
-export async function importSpecification(file: string, definitions: readonly { id: string; paths: { v1: string; v2: string } }[]): Promise<Source> {
+export async function importSpecification(file: string, definitions: readonly { id: string; paths: { v1?: string; v2?: string } }[]): Promise<Source> {
   if ((await stat(file)).size > MAX_FILE) throw new Error('Specification exceeds 64 MiB');
   const bytes = await readFile(file);
   const document = JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/, ''));
   if (document?.swagger !== '2.0' || !document.paths || typeof document.info?.version !== 'string') throw new Error('Expected a Swagger 2 specification with a version');
   const contracts: Record<string, Documented> = {};
   for (const definition of definitions) for (const version of ['v1', 'v2'] as const) {
-    const operation = document.paths[definition.paths[version]]?.post;
+    const route = definition.paths[version];
+    const operation = route ? document.paths[route]?.post : undefined;
     if (!operation) continue;
     const request: Fields = {};
     for (let parameter of operation.parameters ?? []) {
@@ -131,19 +132,27 @@ export async function observeFields(delivery: Delivery, documented: Fields = {})
   return fields;
 }
 export function compareFields(documented: Fields, observed: Fields) {
-  const observedOnly: string[] = [], typeDifferences: { path: string; documented: string[]; observed: string[] }[] = [];
+  const observedOnly: string[] = [], indeterminate: string[] = [], typeDifferences: { path: string; documented: string[]; observed: string[] }[] = [];
+  const patternMatches = (pattern: string, field: string, prefix = false) => {
+    const parts = pattern.split('/'), actual = field.split('/');
+    return (prefix ? parts.length <= actual.length : parts.length === actual.length) && parts.every((part, index) => part === '*' || part === actual[index]);
+  };
   const expectedFor = (field: string) => documented[field] ?? Object.entries(documented).find(([pattern]) => {
     const parts = pattern.split('/'), actual = field.split('/');
     return parts.length === actual.length && parts.every((part, index) => part === '*' || part === actual[index]);
   })?.[1];
   for (const [field, types] of Object.entries(observed)) {
     const expected = expectedFor(field);
-    if (!expected) observedOnly.push(field);
+    if (!expected) {
+      // A flattened recursive/open schema cannot classify descendants as undocumented.
+      if (Object.entries(documented).some(([pattern, types]) => types.some(type => ['recursive', 'unknown'].includes(type)) && patternMatches(pattern, field, true))) indeterminate.push(field);
+      else observedOnly.push(field);
+    }
     else if (!expected.some(type => ['unknown', 'recursive'].includes(type)) && types.some(type => type !== 'null' && !expected.map(item => item === 'integer' ? 'number' : item).includes(type))) {
       typeDifferences.push({ path: field, documented: expected, observed: types });
     }
   }
-  return { observedOnly, typeDifferences, documentedNotYetObserved: Object.keys(documented).filter(field => !Object.hasOwn(observed, field)),
+  return { observedOnly, typeDifferences, indeterminate, documentedNotYetObserved: Object.keys(documented).filter(field => !Object.keys(observed).some(actual => patternMatches(field, actual))),
     caveat: 'Not observed does not mean missing. Null alone establishes no type. Integer constraints and writability are not inferred.' };
 }
 

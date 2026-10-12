@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add reviewed hierarchy tree reads (v2/v1) and hierarchy-node reads (v2 only), local
+  organization-wide acknowledgement, explicit controls/one-page delivery and field learning.
+- Classify unresolved recursive/open schema descendants as indeterminate, not undocumented.
+  Hierarchy configuration-data access remains live-unverified; no writes.
+
 - Add explicit offline Swagger imports pinned by SHA-256, documented/observed comparisons,
   streaming field-only learning, company/environment/account and v1/v2 isolation, and
   archived Enterprise/CC-release generations. No hidden version queries or generated calls.
