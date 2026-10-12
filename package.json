@@ -2,7 +2,7 @@
   "name": "@muneris/cc-cli",
   "version": "0.1.0-dev.0",
   "private": true,
-  "description": "Oracle Simphony Configuration and Content CLI with explicit read-only tasks and versioned field discovery",
+  "description": "Oracle Simphony Configuration and Content CLI with explicit reads, guarded order-device updates and versioned field discovery",
   "type": "module",
   "license": "MIT",
   "author": "Muneris",

@@ -6,6 +6,7 @@ import { registerCompanies, loginCompany, refreshCompanies } from './companies.j
 import { checkForUpdates } from './updates.js';
 import { registerReads, readDefinitions } from './read-commands.js';
 import { registerCatalogue } from './catalogue-commands.js';
+import { registerWrites, writeDefinitions } from './write-commands.js';
 import { CliError, Exit, localResult, reportError } from './output.js';
 const version = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
 function network(command: Command): Command {
@@ -21,19 +22,20 @@ function nonblank(value: string, flag: string): string {
   return value; // Preserve significant client-ID characters and username casing.
 }
 export function createProgram(store = new StateStore(), setExit: (code: number) => void = code => { process.exitCode = code; }, checkVersion = checkForUpdates): Command {
-  const root = new Command('cc').description('Oracle Simphony Configuration and Content CLI. Safe authentication and explicit read-only tasks; no configuration writes.')
+  const root = new Command('cc').description('Oracle Simphony Configuration and Content CLI. Explicit reads and guarded single-record order-device updates.')
     .version(version).exitOverride().configureOutput({ writeErr: () => {} });
-  root.addHelpText('after', '\nStart: cc auth status; reuse saved tokens or explicitly refresh.\nSetup: cc auth config --help, then cc auth login --help.\nRequires a Simphony Configuration API account. Uses id_token, not access_token.\nState is isolated in CcCli; never imports BI/STS tokens or untagged profiles.\nNo application environment-variable configuration, directory override, TLS bypass or retries.\nHardcoded read-only calls; extensible record fields. No arbitrary endpoints or configuration writes.\nLocal/help commands stay offline. Support: support@muneris.dk.\n');
+  root.addHelpText('after', '\nStart: cc auth status; reuse saved tokens or explicitly refresh.\nSetup: cc auth config --help, then cc auth login --help.\nRequires a Simphony Configuration API account. Uses id_token, not access_token.\nState is isolated in CcCli; never imports BI/STS tokens or untagged profiles.\nNo application environment-variable configuration, directory override, TLS bypass or retries.\nHardcoded calls; extensible record fields. No arbitrary endpoints. Order-device writes require a location boundary and one-use approval.\nLocal/help commands stay offline. Support: support@muneris.dk.\n');
   root.action(() => { root.outputHelp(); });
   registerCompanies(root, store);
   registerReads(root, store, setExit);
+  registerWrites(root, store, setExit);
   registerCatalogue(root, store, readDefinitions);
   root.command('version').description('[read-only] Installed version; --check explicitly queries npm')
     .option('--check', 'Explicit five-second npm lookup; never installs')
     .addHelpText('after', '\nCC is unpublished; unavailable does not mean up to date.\nNo credentials go to npm. Ask before updating. Support: support@muneris.dk.\n')
     .action(async opts => localResult('version', {version, node: process.version, implementedDataAreas: readDefinitions.map(item => item.id), ...(opts.check ? {update: await checkVersion(version)} : {})}));
   root.command('endpoints').description('[read-only][local] Implemented CC calls and explicit version mappings')
-    .action(() => localResult('endpoints', { dataEndpoints: readDefinitions, defaultApiVersion: 'v2', automaticFallback: false }));
+    .action(() => localResult('endpoints', { dataEndpoints: readDefinitions, writeEndpoints: writeDefinitions, defaultApiVersion: 'v2', automaticFallback: false }));
   const auth = root.command('auth').description('Oracle authorization-code + PKCE S256, ID tokens and scheduled company renewal');
   const status = async () => {
     const registry = await store.loadCompanies();

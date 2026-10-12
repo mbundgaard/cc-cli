@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add guarded single-record v2 order-device updates: private explicit account/environment/
+  location/RVC boundary; offline review by default; three ownership/existence proofs;
+  reviewed 15-minute one-use approvals bound to payload/current record/audit/boundary.
+  Consume approval before POST; preserve exact response delivery. Reject batches and
+  extra/nested identities; explicitly acknowledge unverified fields and update risks.
+  No live updates, auto-merge, snapshots, readback, rollback or retries. Omission/null and
+  non-atomic concurrency limitations remain explicit. Authorized scoped KDS/order-device
+  reads succeeded separately; private records remain outside the repository.
+
 - Add independent order-type names and parameter reads (v2/v1), explicit hierarchy criteria
   scope and shared controls. Preserve v1 route casing, names lineNum and raw option/mask
   lengths; no companion reads, inheritance resolution or workflow logic.

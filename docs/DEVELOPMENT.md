@@ -16,6 +16,10 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/read-commands.ts: generic registration, shared read controls, explicit v1/v2 and dry-run.
 - src/read-filters.ts: structurally validated scope composition, no record-field allowlist.
   Scope helpers are request construction, not client-side filtering or investigation logic.
+- src/write-scope.ts: explicit account/location/RVC boundary, one-use approvals and locks.
+- src/order-device-update.ts: reviewed v2 single-object validation, ownership/existence
+  proofs, review-bound approvals and unchanged update response delivery. No snapshots/readback.
+- src/write-commands.ts: offline boundary configuration and explicit prepare/execute commands.
 - src/transport.ts: HTTPS/TLS, bounded requests, no redirects/retries; loopback for tests.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
 - src/responses.ts: internal byte-exact bounded delivery, never used for token responses.
@@ -48,11 +52,13 @@ The guide includes v1/v2, hierarchy scopes, translated strings, options and expl
 pagination. Do not copy BI location/date bodies or infer universal paths/media types.
 Hierarchy tree/node, menu-master, KDS-display, order-device, workstation and order-type
 names/parameters reads are implemented and synthetic-tested.
-Only narrowly authorized location-node metadata reads have been exercised live. No broad
+Authorized scoped hierarchy, KDS and order-device reads have been exercised live. No broad
 endpoint generation, comparison orchestration or implicit schema fetches.
-Separate any future configuration writes clearly and require explicit authorization;
-never infer write permission from a successful read or auto-retry uncertain writes.
+Single-record v2 order-device updates are implemented with offline review by default,
+explicit read-only preparation and one-use approved execution inside a local boundary.
+See [update safety](ORDER-DEVICE-UPDATES.md). No automatic snapshot/readback/merge/retry.
+Never infer write permission or omission/null/concurrency semantics from successful reads.
 
-Authorized logins, version reads and location-node metadata reads succeeded. Live refresh
-and other record-task permissions remain unverified. Do not bypass documented inconsistencies with silent alternate grants/callbacks.
+Authorized logins and version reads also succeeded. Live updates, refresh and other
+record-task permissions remain unverified. Do not bypass documented inconsistencies with silent alternate grants/callbacks.
 Use safe token handling, explicit requests and verbatim data as the three pillars.

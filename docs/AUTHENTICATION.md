@@ -3,8 +3,8 @@
 The implementation is ported from BiCli's tested authentication/company lifecycle,
 with CC-specific naming, state paths and strict product markers. STS shares the safety
 principles, but CC follows Oracle's ID-token model like BI, not STS access tokens.
-One authorized UAT login and v1 release-version read succeeded. Live refresh and
-configuration-data permissions remain unverified.
+Authorized logins, v1/v2 release-version reads and scoped hierarchy/KDS/order-device reads
+succeeded. Live updates, refresh and other task permissions remain unverified.
 
 ## Oracle flow
 

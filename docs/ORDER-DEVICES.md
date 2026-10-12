@@ -29,8 +29,10 @@ No printer, display, backup device or distribution group is fetched automaticall
 
 Both reviewed versions accept JSON and the common controls; v1 uses languages, v2 langIds.
 There is no v1 fallback, polling, retry, local sorting/filtering, configuration comparison or
-write operation. Responses use shared exact/private-file delivery and structural metadata
-learning. Synthetic tests do not establish live order-device permissions or semantics.
+write operation inside this list task. [Guarded single-record updates](ORDER-DEVICE-UPDATES.md)
+are a separate explicit command with a configured boundary and one-use approval.
+Read responses use shared exact/private-file delivery and structural metadata learning.
+Synthetic tests do not establish live update permissions or semantics.
 
 Sources: Oracle endpoint pages and Swagger 2 version 2026.06.15,
 SHA-256 `f12ae90ea45a1e2c2896f4ddbbddd8949e6a179541870e85896864c852024289`.

@@ -3,11 +3,16 @@
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 
 - Auth/company, version, hierarchy, menu-master, KDS-display, order-device, workstation and
-  order-type names/parameters reads; no writes. Workstation responses may contain sensitive nested peripheral settings;
+  order-type names/parameters reads; guarded single-record v2 order-device updates.
+  Update defaults offline; --prepare does ownership checks and issues a one-use approval;
+  --execute requires matching payload/current record/boundary/audit and risk acknowledgement.
+  Location/RVC boundaries are private user state, never customer IDs hardcoded into source.
+  No automatic merge, snapshots, readback, rollback or retry. No other writes.
+  Workstation responses may contain sensitive nested peripheral settings;
   preserve exact bytes, keep exports private and never paste credentials into reports.
   Explicit scope per reviewed endpoint; no comparison workflow, discovery or related reads.
-  Authorized logins/version/location-node metadata reads succeeded. Live refresh and other
-  record reads remain unverified. Permissions are endpoint-specific. Hardcode calls, not fields.
+  Authorized login/version/hierarchy/KDS/order-device reads succeeded. Live updates, refresh
+  and other record reads remain unverified. Permissions are endpoint-specific. Hardcode calls, not fields.
 - Mirror BI's tested PKCE/cookies/ID-token lifecycle, not STS access tokens.
 - User preference: agents infer enterprise from a client ID when a recognizable encoded
   enterprise prefix exists, then supply --org explicitly. Preserve the client ID unchanged.

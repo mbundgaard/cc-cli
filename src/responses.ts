@@ -98,7 +98,7 @@ export class ResponseCollector extends Writable {
 // The one data-response boundary for current and future task areas. Output-mode
 // switches, agent detection, token persistence and response interpretation do not belong here.
 export type DeliveryObserver = (response: { status: number; delivery: Delivery }) => Promise<void>;
-export async function deliverResponse(input: HttpRequest, operation: string, baseDirectory = stateDirectory(), quiet = false, observer?: DeliveryObserver): Promise<number> {
+export async function deliverResponse(input: HttpRequest, operation: string, baseDirectory = stateDirectory(), quiet = false, observer?: DeliveryObserver, kind: 'read' | 'write' = 'read'): Promise<number> {
   const collector = new ResponseCollector(baseDirectory);
   const cancellation = new AbortController();
   const cancel = () => cancellation.abort();
@@ -131,6 +131,7 @@ export async function deliverResponse(input: HttpRequest, operation: string, bas
     return httpExit(response.status);
   } catch (error) {
     if (!published) await collector.discard();
+    if (kind === 'write') throw new CliError(error instanceof CliError ? error.exitCode : Exit.network, 'CC write outcome may be uncertain. Do not blindly retry.', 'No automatic retry or readback was performed.');
     if (error instanceof CliError) throw error;
     throw new CliError(Exit.network, signal.aborted ? 'CC read request cancelled; no retry was made' : 'CC read request failed; no retry was made', 'Check connectivity and TLS. No partial response was delivered.');
   } finally {

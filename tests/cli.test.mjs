@@ -6,13 +6,17 @@ import { spawnSync } from 'node:child_process';
 import { createProgram } from '../dist/cli.js';
 import { validateCompanies, validateState, emptyState, emptyCompanies, stateDirectory } from '../dist/state.js';
 import { setup, tokens, clientId } from './helpers.mjs';
-test('production exposes reviewed read-only calls, never synthetic or BI commands', () => {
+test('production exposes reviewed reads and guarded writes, never synthetic or BI commands', () => {
   const root = createProgram();
-  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'kds-displays', 'menu-item-masters', 'order-devices', 'order-types', 'server-version', 'version', 'workstations']);
+  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'kds-displays', 'menu-item-masters', 'order-devices', 'order-types', 'server-version', 'version', 'workstations', 'write-scope']);
   for (const args of [['--help'], ['auth', 'login', '--help'], ['company', '--help'], ['endpoints'], ['version']]) {
     const r = spawnSync(process.execPath, ['bin/cc.js', ...args], {encoding: 'utf8'});
     assert.equal(r.status, 0, r.stderr);
-    if (args[0] === 'endpoints') assert.deepEqual(JSON.parse(r.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters', 'kds-displays', 'order-devices', 'workstations', 'order-types', 'order-type-parameters']);
+    if (args[0] === 'endpoints') {
+      const inventory = JSON.parse(r.stdout).data;
+      assert.deepEqual(inventory.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters', 'kds-displays', 'order-devices', 'workstations', 'order-types', 'order-type-parameters']);
+      assert.deepEqual(inventory.writeEndpoints.map(item => item.path), ['/config/sim/v2/devices/updateOrderDevices']);
+    }
   }
   for (const args of [['test-read'], ['pos-dimensions'], ['getHierarchy'], ['--state-dir', 'elsewhere'], ['--insecure']]) {
     const r = spawnSync(process.execPath, ['bin/cc.js', ...args], {encoding: 'utf8'});

@@ -1,13 +1,18 @@
 # CC CLI
 
 Authentication and explicit deployment-version, hierarchy, menu-master, KDS-display, order-device, workstation and order-type reads.
-No configuration writes or arbitrary endpoints.
+Guarded single-record order-device updates are opt-in; no other writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
 | Command | Effect |
 |---|---|
 | `cc --help` | Local help |
-| `cc endpoints` | Local hardcoded read inventory and v1/v2 mappings |
+| `cc endpoints` | Local hardcoded read/write inventory and version mappings |
+| `cc write-scope set --location-number ... --location-hier-unit-id ... --rvc-hier-unit-ids ... --confirm-company ... --confirm-location ... [--replace]` | Explicit local write boundary; no network |
+| `cc write-scope show` / `cc write-scope disable` | Inspect/disable the local boundary |
+| `cc order-devices update --hier-unit-id ... --object-num ... --audit-ref ... --file ... [--dry-run]` | Offline exact payload review; default mode |
+| `cc order-devices update ... --prepare` | Three ownership/existence checks; proposed changes and one-use approval, no update |
+| `cc order-devices update ... --execute --approve ... --ack-update-risks` | Repeat checks, consume approval, send one v2 update; no readback |
 | `cc server-version [--api-version v1\|v2] [--dry-run] [--quiet]` | Explicit deployed Enterprise/CC API versions; default v2, no fallback |
 | `cc hierarchy list --organization-wide [controls]` | One explicit hierarchy-tree page; v2 preferred, explicit v1 |
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
@@ -49,7 +54,10 @@ shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omi
 [Shared read controls](READS.md) defines server-side filtering/sorting/projection, explicit
 scope transport and one-page execution. [KDS displays](KDS-DISPLAYS.md) uses location-scoped
 criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fetches
-related records automatically. [Workstations](WORKSTATIONS.md) uses a required location
+related records automatically when listing. [Order-device updates](ORDER-DEVICE-UPDATES.md)
+require explicit ownership checks, a location/RVC boundary, matching payload identities and
+approval; optional unverified fields require --allow-unverified-fields. No snapshots,
+automatic merge, readback or retry. [Workstations](WORKSTATIONS.md) uses a required location
 hierUnitId body parameter; nested device settings may be sensitive.
 [Order types](ORDER-TYPES.md) exposes names and parameters as separate explicit calls;
 no inheritance resolution or implicit companion reads.

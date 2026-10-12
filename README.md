@@ -13,10 +13,12 @@ location hierarchy unit. Order-device reads require an explicit RVC hierarchy un
 Workstation reads require an explicit location hierarchy unit in the request body.
 Order-type names and parameters are separate hierarchy-scoped reads.
 Calls are hardcoded; record fields are extensible. Shared server-side filtering, sorting,
-projection and explicit paging are documented in [Read controls](docs/READS.md). No writes.
-Authorized logins, version reads and location-node metadata reads succeeded. Live refresh,
-menu-master, KDS-display, order-device, workstation and order-type reads remain unverified;
-permissions are endpoint-specific.
+projection and explicit paging are documented in [Read controls](docs/READS.md).
+[Single-record order-device updates](docs/ORDER-DEVICE-UPDATES.md) require a configured
+location/RVC boundary, read-only preparation, one-use approval and explicit risk acknowledgement.
+No automatic merge, snapshot, readback or retry. Other configuration writes are absent.
+Authorized logins, version/hierarchy, KDS-display and order-device reads succeeded. Live
+updates, refresh and other task permissions remain unverified; permissions are endpoint-specific.
 
 ## Development
 
@@ -77,11 +79,13 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 
 - Local/help/status commands stay offline; login/refresh are explicit network actions.
 - `version --check` explicitly checks npm; never installs or sends Oracle credentials.
-- Read response delivery: at most 16 KiB
+- Data response delivery: at most 16 KiB
   AND 500 lines inline; larger complete bodies become private files with compact receipts.
   Authentication responses never pass through data export handling.
 - Requests pin company identity and validate/read input before renewal.
-- No arbitrary endpoint command, automatic discovery, config writes, release or publication.
+- No arbitrary endpoint command, automatic discovery, bulk writes, release or publication.
+- Writes stay offline by default; --prepare checks ownership without updating. --execute
+  consumes an approval before one v2 order-device update. No snapshots/readback are automatic.
 - `cc server-version [--api-version v1|v2] [--dry-run] [--quiet]` sends one explicit read;
   no fallback. Dry-run is offline. `cc version` still means the installed CLI version.
 - Explicit version reads establish a local catalogue generation. Release changes archive
