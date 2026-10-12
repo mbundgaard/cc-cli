@@ -1,0 +1,21 @@
+{
+  "name": "@muneris/cc-cli",
+  "version": "0.1.0-dev.0",
+  "private": true,
+  "description": "Oracle Simphony Configuration and Content CLI authentication scaffold",
+  "type": "module",
+  "license": "MIT",
+  "author": "Muneris",
+  "bin": { "cc": "bin/cc.js" },
+  "files": ["bin/", "dist/", "README.md", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "docs/"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:package": "npm run build && node scripts/package-smoke.mjs",
+    "prepack": "npm run build",
+    "start": "node bin/cc.js"
+  },
+  "dependencies": { "commander": "^14.0.0", "tough-cookie": "^6.0.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.9.0" }
+}
