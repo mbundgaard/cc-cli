@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add order-device reads (v2/v1) with explicit RVC scope and shared server-side controls.
+  No related-device lookups, response normalization, live calls or writes.
+
 - Refactor reviewed read calls into a hardcoded capability registry with shared registration,
   filtering/sorting/projections/paging and body-versus-criteria scope transport. No record
   column allowlist or investigation workflow. Add bounded, AND-grouped scoped filters.

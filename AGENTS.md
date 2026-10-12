@@ -2,7 +2,7 @@
 
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 
-- Auth/company, version, hierarchy, menu-master and KDS-display reads implemented; no writes.
+- Auth/company, version, hierarchy, menu-master, KDS-display and order-device reads; no writes.
   Explicit scope per reviewed endpoint; no comparison workflow, discovery or related reads.
   Authorized logins/version/location-node metadata reads succeeded. Live refresh and other
   record reads remain unverified. Permissions are endpoint-specific. Hardcode calls, not fields.

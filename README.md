@@ -9,7 +9,8 @@ locked atomic persistence/recovery, safe status and explicit version checks.
 `cc server-version` reads deployed Enterprise and CC API versions (v2 default, explicit v1).
 Hierarchy tree/node reads require explicit organization-wide acknowledgement; menu item
 master reads require an explicit hierarchy unit; KDS display reads require an explicit
-location hierarchy unit. Calls are hardcoded; record fields are
+location hierarchy unit. Order-device reads require an explicit RVC hierarchy unit.
+Calls are hardcoded; record fields are
 extensible. No writes.
 Authorized logins, version reads and location-node metadata reads succeeded. Live refresh,
 menu-master and KDS-display reads remain unverified; permissions are endpoint-specific.
@@ -89,6 +90,7 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 [CLI](docs/CLI.md) | [Authentication](docs/AUTHENTICATION.md) |
 [Field catalogue](docs/CATALOGUE.md) | [Shared read controls](docs/READS.md) |
 [Hierarchy](docs/HIERARCHY.md) | [KDS displays](docs/KDS-DISPLAYS.md) |
+[Order devices](docs/ORDER-DEVICES.md) |
 [Menu item masters](docs/MENU-ITEM-MASTERS.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)

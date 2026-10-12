@@ -11,6 +11,8 @@ import {setup, tokens} from './helpers.mjs';
 export const cases = [
   {id: 'kds-displays', command: ['kds-displays', 'list'], mode: 'criteria',
     v1: '/config/sim/v1/devices/getKitchenDisplays', v2: '/config/sim/v2/devices/getKitchenDisplays'},
+  {id: 'order-devices', command: ['order-devices', 'list'], mode: 'criteria',
+    v1: '/config/sim/v1/devices/getOrderDevices', v2: '/config/sim/v2/devices/getOrderDevices'},
 ];
 const profile = {schemaVersion: 1, product: 'cc', auth: {apiUrl: 'https://cc.example.invalid', orgName: 'Synthetic'}};
 async function ready(s) {

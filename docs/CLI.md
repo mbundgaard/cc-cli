@@ -1,6 +1,6 @@
 # CC CLI
 
-Authentication and explicit deployment-version, hierarchy, menu-master and KDS-display reads.
+Authentication and explicit deployment-version, hierarchy, menu-master, KDS-display and order-device reads.
 No configuration writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
@@ -13,6 +13,7 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
 | `cc menu-item-masters list --hier-unit-id <id> [controls]` | One explicit master-record page; v2 preferred, explicit v1 |
 | `cc kds-displays list --hier-unit-id <location-id> [controls]` | One explicitly scoped KDS-display page; v2 preferred, explicit v1 |
+| `cc order-devices list --hier-unit-id <rvc-id> [controls]` | One explicitly scoped order-device page; v2 preferred, explicit v1 |
 | `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
 | `cc catalogue show` | Local documentation, generations and archives |
 | `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
@@ -44,7 +45,8 @@ shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omi
 
 [Shared read controls](READS.md) defines server-side filtering/sorting/projection, explicit
 scope transport and one-page execution. [KDS displays](KDS-DISPLAYS.md) uses location-scoped
-criteria; it does not fetch controllers or any other records automatically.
+criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fetches
+related records automatically.
 
 [Hierarchy](HIERARCHY.md) documents JSON/file/stdin, explicit paging, filters/projections,
 version-specific language controls and scope acknowledgement.

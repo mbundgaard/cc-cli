@@ -26,5 +26,9 @@ export const readDefinitions = [
     paths: { v1: '/config/sim/v1/devices/getKitchenDisplays', v2: '/config/sim/v2/devices/getKitchenDisplays' },
     scope: 'location', scopeMode: 'criteria', scopeLabel: 'Location hierarchy unit ID; local scope compiled into searchCriteria',
     help: 'Oracle names these Kitchen Display Clients. No controller, RVC or related-object lookup. Preserve nested panels, options and references unchanged.' },
+  { id: 'order-devices', command: 'order-devices list', summary: 'Order devices at one revenue center',
+    paths: { v1: '/config/sim/v1/devices/getOrderDevices', v2: '/config/sim/v2/devices/getOrderDevices' },
+    scope: 'revenue-center', scopeMode: 'criteria', scopeLabel: 'Revenue-center hierarchy unit ID; local scope compiled into searchCriteria',
+    help: 'Order-device scope is an RVC, not a location. No printer, display, distribution-group, redirect or backup lookup. Preserve options and nested settings unchanged.' },
 ] as const satisfies readonly ReadDefinition[];
 export type ReadId = typeof readDefinitions[number]['id'];
