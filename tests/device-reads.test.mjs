@@ -13,6 +13,8 @@ export const cases = [
     v1: '/config/sim/v1/devices/getKitchenDisplays', v2: '/config/sim/v2/devices/getKitchenDisplays'},
   {id: 'order-devices', command: ['order-devices', 'list'], mode: 'criteria',
     v1: '/config/sim/v1/devices/getOrderDevices', v2: '/config/sim/v2/devices/getOrderDevices'},
+  {id: 'workstations', command: ['workstations', 'list'], mode: 'body',
+    v1: '/config/sim/v1/devices/getWorkstations', v2: '/config/sim/v2/devices/getWorkstations'},
 ];
 const profile = {schemaVersion: 1, product: 'cc', auth: {apiUrl: 'https://cc.example.invalid', orgName: 'Synthetic'}};
 async function ready(s) {

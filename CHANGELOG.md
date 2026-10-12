@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add workstation reads (v2/v1), required location hierUnitId in the request body and shared
+  controls. Preserve sensitive nested settings verbatim without persisting values in the
+  field catalogue; no automatic peripheral or service-host reads. No live workstation calls.
+
 - Add order-device reads (v2/v1) with explicit RVC scope and shared server-side controls.
   No related-device lookups, response normalization, live calls or writes.
 

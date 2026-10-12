@@ -10,6 +10,7 @@ locked atomic persistence/recovery, safe status and explicit version checks.
 Hierarchy tree/node reads require explicit organization-wide acknowledgement; menu item
 master reads require an explicit hierarchy unit; KDS display reads require an explicit
 location hierarchy unit. Order-device reads require an explicit RVC hierarchy unit.
+Workstation reads require an explicit location hierarchy unit in the request body.
 Calls are hardcoded; record fields are
 extensible. No writes.
 Authorized logins, version reads and location-node metadata reads succeeded. Live refresh,
@@ -90,7 +91,7 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 [CLI](docs/CLI.md) | [Authentication](docs/AUTHENTICATION.md) |
 [Field catalogue](docs/CATALOGUE.md) | [Shared read controls](docs/READS.md) |
 [Hierarchy](docs/HIERARCHY.md) | [KDS displays](docs/KDS-DISPLAYS.md) |
-[Order devices](docs/ORDER-DEVICES.md) |
+[Order devices](docs/ORDER-DEVICES.md) | [Workstations](docs/WORKSTATIONS.md) |
 [Menu item masters](docs/MENU-ITEM-MASTERS.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)

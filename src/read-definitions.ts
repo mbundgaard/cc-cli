@@ -30,5 +30,9 @@ export const readDefinitions = [
     paths: { v1: '/config/sim/v1/devices/getOrderDevices', v2: '/config/sim/v2/devices/getOrderDevices' },
     scope: 'revenue-center', scopeMode: 'criteria', scopeLabel: 'Revenue-center hierarchy unit ID; local scope compiled into searchCriteria',
     help: 'Order-device scope is an RVC, not a location. No printer, display, distribution-group, redirect or backup lookup. Preserve options and nested settings unchanged.' },
+  { id: 'workstations', command: 'workstations list', summary: 'Workstation configuration at one location',
+    paths: { v1: '/config/sim/v1/devices/getWorkstations', v2: '/config/sim/v2/devices/getWorkstations' },
+    scope: 'location', scopeMode: 'body', scopeLabel: 'Location hierarchy unit ID (or hierUnitId in JSON); never a workstation number',
+    help: 'No workstation class, RVC, peripheral or service-host lookup. Nested devices may contain certificate/password settings: review projections and keep responses private. No redaction alters returned bytes.' },
 ] as const satisfies readonly ReadDefinition[];
 export type ReadId = typeof readDefinitions[number]['id'];

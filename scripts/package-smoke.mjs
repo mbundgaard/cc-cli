@@ -11,6 +11,7 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const addedTasks = [
   {id: 'kds-displays', command: ['kds-displays','list'], route: '/config/sim/v2/devices/getKitchenDisplays', body: {searchCriteria:'where equals(hierUnitId,7)'}},
   {id: 'order-devices', command: ['order-devices','list'], route: '/config/sim/v2/devices/getOrderDevices', body: {searchCriteria:'where equals(hierUnitId,7)'}},
+  {id: 'workstations', command: ['workstations','list'], route: '/config/sim/v2/devices/getWorkstations', body: {hierUnitId:7}},
 ];
 function npmRun(args) {
   const r = spawnSync(process.execPath, [npm, ...args], {encoding: 'utf8'});
@@ -18,7 +19,7 @@ function npmRun(args) {
 }
 try {
   const [packed] = JSON.parse(npmRun(['pack', '--ignore-scripts', '--json', '--pack-destination', temp]));
-  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md', 'docs/READS.md', 'docs/KDS-DISPLAYS.md', 'docs/ORDER-DEVICES.md']);
+  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md', 'docs/READS.md', 'docs/KDS-DISPLAYS.md', 'docs/ORDER-DEVICES.md', 'docs/WORKSTATIONS.md']);
   for (const f of packed.files) assert.ok(allow.has(f.path) || /^dist\/[a-z-]+\.(?:js|d\.ts)$/.test(f.path), `Unexpected package file: ${f.path}`);
   npmRun(['install', '--prefix', temp, '--ignore-scripts', '--no-audit', '--no-fund', path.join(temp, packed.filename)]);
   const shim = path.join(temp, 'node_modules', '.bin', process.platform === 'win32' ? 'cc.cmd' : 'cc');
