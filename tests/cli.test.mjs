@@ -8,11 +8,11 @@ import { validateCompanies, validateState, emptyState, emptyCompanies, stateDire
 import { setup, tokens, clientId } from './helpers.mjs';
 test('production exposes reviewed read-only calls, never synthetic or BI commands', () => {
   const root = createProgram();
-  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'server-version', 'version']);
+  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'menu-item-masters', 'server-version', 'version']);
   for (const args of [['--help'], ['auth', 'login', '--help'], ['company', '--help'], ['endpoints'], ['version']]) {
     const r = spawnSync(process.execPath, ['bin/cc.js', ...args], {encoding: 'utf8'});
     assert.equal(r.status, 0, r.stderr);
-    if (args[0] === 'endpoints') assert.deepEqual(JSON.parse(r.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes']);
+    if (args[0] === 'endpoints') assert.deepEqual(JSON.parse(r.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters']);
   }
   for (const args of [['test-read'], ['pos-dimensions'], ['getHierarchy'], ['--state-dir', 'elsewhere'], ['--insecure']]) {
     const r = spawnSync(process.execPath, ['bin/cc.js', ...args], {encoding: 'utf8'});

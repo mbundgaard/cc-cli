@@ -12,11 +12,13 @@ export const readDefinitions = [
     paths: { v1: '/config/sim/v1/hierarchy/getHierarchy', v2: '/config/sim/v2/hierarchy/getHierarchy' }, scope: 'organization-wide' },
   { id: 'hierarchy-nodes', command: 'hierarchy nodes list', summary: 'Hierarchy nodes (v2 only)',
     paths: { v2: '/config/sim/v2/hierarchy/getHierarchyNodes' }, scope: 'organization-wide' },
+  { id: 'menu-item-masters', command: 'menu-item-masters list', summary: 'Menu item masters at one explicit hierarchy unit',
+    paths: { v1: '/config/sim/v1/menuItems/getMenuItemMasters', v2: '/config/sim/v2/menuItems/getMenuItemMasters' }, scope: 'hierarchy-unit' },
 ] as const;
 export type ReadId = typeof readDefinitions[number]['id'];
 export type ReadOptions = QueryOptions & {
   apiVersion?: 'v1' | 'v2'; organizationWide?: boolean; include?: string; includeAll?: string;
-  searchCriteria?: string; languages?: string; langIds?: string; limit?: number; offset?: number; orderBy?: string;
+  searchCriteria?: string; languages?: string; langIds?: string; limit?: number; offset?: number; orderBy?: string; hierUnitId?: number;
 };
 export function integerControl(value: unknown, field: string, minimum = 0): void {
   const numeric = isRawJson(value) ? JSON.parse(JSON.stringify(value)) : value;
@@ -36,7 +38,7 @@ export function buildReadRequest(id: ReadId, state: State, input: Record<string,
   const route = (definition.paths as Partial<Record<'v1' | 'v2', string>>)[apiVersion];
   if (!route) throw new CliError(Exit.usage, 'This operation has no reviewed route for that API version; no fallback');
   const body = { ...input };
-  const controls = ['searchCriteria', 'include', 'includeAll', 'languages', 'langIds', 'limit', 'offset', 'orderBy'] as const;
+  const controls = ['searchCriteria', 'include', 'includeAll', 'languages', 'langIds', 'limit', 'offset', 'orderBy', 'hierUnitId'] as const;
   for (const key of controls) if (options[key] !== undefined) {
     if (Object.hasOwn(body, key)) throw new CliError(Exit.usage, `Specify ${key} in either JSON or flags, not both`);
     body[key] = options[key];
@@ -44,8 +46,12 @@ export function buildReadRequest(id: ReadId, state: State, input: Record<string,
   if (id === 'server-version') {
     if (Object.keys(body).length) throw new CliError(Exit.usage, 'Server version takes an empty request body');
   } else {
-    if (!options.organizationWide) throw new CliError(Exit.usage, 'Hierarchy reads require explicit --organization-wide acknowledgement, even with a filter');
-    const allowed: readonly string[] = controls.filter(key => key !== (apiVersion === 'v1' ? 'langIds' : 'languages'));
+    if (definition.scope === 'organization-wide' && !options.organizationWide) throw new CliError(Exit.usage, 'Hierarchy reads require explicit --organization-wide acknowledgement, even with a filter');
+    if (definition.scope === 'hierarchy-unit') {
+      if (options.organizationWide) throw new CliError(Exit.usage, 'This task requires an explicit hierarchy unit, not organization-wide scope');
+      integerControl(body.hierUnitId, 'hierUnitId', 1);
+    }
+    const allowed: readonly string[] = controls.filter(key => key !== (apiVersion === 'v1' ? 'langIds' : 'languages') && (key !== 'hierUnitId' || definition.scope === 'hierarchy-unit'));
     if (Object.keys(body).some(key => !allowed.includes(key))) throw new CliError(Exit.usage, 'Unsupported request control for this operation/API version');
     for (const key of ['searchCriteria', 'include', 'languages', 'langIds', 'orderBy']) stringField(body, key, 2000);
     if (body.includeAll !== undefined && !['basic', 'detailed'].includes(body.includeAll as string)) throw new CliError(Exit.usage, 'includeAll must be basic or detailed');
@@ -89,6 +95,11 @@ export function registerReads(root: Command, store: StateStore, setExit: (code: 
   readOptions(root.command('server-version').description('[read-only][network] Deployed Enterprise and CC API versions, not this CLI version'))
     .addHelpText('after', '\nOne POST with an empty JSON body. v2 by default; explicit v1 is supported.\nNo discovery, retries, fallback or configuration changes. Dry-run stays offline.\nSuccessful reads use the shared due-token renewal and verbatim delivery lifecycle.\n')
     .action(async options => { setExit(await executeRead('server-version', store, options)); });
+  const masters = root.command('menu-item-masters').description('Read menu item masters; no prices, definitions or writes');
+  recordOptions(masters.command('list').description('[read-only][network] One explicit hierarchy-unit page'))
+    .option('--hier-unit-id <id>', 'Required hierarchy unit ID (or hierUnitId in JSON); never a structure ID', numericFlag)
+    .addHelpText('after', '\nAlthough Oracle marks hierUnitId optional, this CLI requires it explicitly for safe scope.\nA filter alone is not a substitute. No inherited/effective-menu calculation or additional reads.\n')
+    .action(async options => { setExit(await executeRead('menu-item-masters', store, options)); });
   const hierarchy = root.command('hierarchy').description('Read hierarchy trees and nodes; never create/delete/move nodes');
   for (const [id, parent] of [['hierarchy', hierarchy], ['hierarchy-nodes', hierarchy.command('nodes').description('Flat hierarchy nodes; reviewed v2 route only')]] as const) {
     recordOptions(parent.command('list').description('[read-only][network] Explicit organization-wide hierarchy read'))

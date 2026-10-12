@@ -12,7 +12,7 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/state.ts: fixed CC paths, strict registry/profile product tags, atomic persistence.
 - src/companies.ts: explicit company keys, staged login, renewal/expiry and lifecycle.
 - src/cli.ts: auth/company/local metadata and read task registration.
-- src/read-commands.ts: hardcoded version/hierarchy routes, shared reviewed controls,
+- src/read-commands.ts: hardcoded version/hierarchy/menu-master routes, shared reviewed controls,
   explicit v1/v2, organization acknowledgement and offline dry-run.
 - src/transport.ts: HTTPS/TLS, bounded requests, no redirects/retries; loopback for tests.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
@@ -44,7 +44,8 @@ configuration alone does not establish remote CI execution. No publish workflow.
 Review individual CC endpoint contracts/version support before implementing data commands.
 The guide includes v1/v2, hierarchy scopes, translated strings, options and explicit
 pagination. Do not copy BI location/date bodies or infer universal paths/media types.
-Hierarchy tree/node reads are implemented and synthetic-tested, not authorized for live calls.
+Hierarchy tree/node and menu-master reads are implemented and synthetic-tested, not
+authorized for live calls. No broad endpoint generation or implicit schema fetches.
 Separate any future configuration writes clearly and require explicit authorization;
 never infer write permission from a successful read or auto-retry uncertain writes.
 

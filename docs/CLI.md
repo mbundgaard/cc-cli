@@ -1,6 +1,7 @@
 # CC CLI
 
-Authentication, explicit deployment-version and hierarchy reads; no configuration writes or arbitrary endpoints.
+Authentication and explicit deployment-version, hierarchy and menu-master reads.
+No configuration writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
 | Command | Effect |
@@ -10,6 +11,7 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc server-version [--api-version v1\|v2] [--dry-run] [--quiet]` | Explicit deployed Enterprise/CC API versions; default v2, no fallback |
 | `cc hierarchy list --organization-wide [controls]` | One explicit hierarchy-tree page; v2 preferred, explicit v1 |
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
+| `cc menu-item-masters list --hier-unit-id <id> [controls]` | One explicit master-record page; v2 preferred, explicit v1 |
 | `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
 | `cc catalogue show` | Local documentation, generations and archives |
 | `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
@@ -40,7 +42,8 @@ shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omi
 `--timeout` uses the same bounds as auth. Internal test-only commands are not packaged.
 
 [Hierarchy](HIERARCHY.md) documents JSON/file/stdin, explicit paging, filters/projections,
-version-specific language controls and scope acknowledgement. Run `server-version` first
+version-specific language controls and scope acknowledgement.
+[Menu item masters](MENU-ITEM-MASTERS.md) uses these controls with mandatory hierUnitId. Run `server-version` first
 for the catalogue; dry-run does not need tokens or a catalogue generation.
 
 Local successes use `{ "ok": true, "command": "...", "data": ... }`. Diagnostics and

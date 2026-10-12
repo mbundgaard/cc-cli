@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add menu item master reads (v2 preferred, explicit v1) with mandatory hierarchy-unit
+  scope, shared request controls, extensible record fields and separate versioned learning.
+  No field-based response rejection, interpretation, related reads or write commands.
+
 - Add reviewed hierarchy tree reads (v2/v1) and hierarchy-node reads (v2 only), local
   organization-wide acknowledgement, explicit controls/one-page delivery and field learning.
 - Classify unresolved recursive/open schema descendants as indeterminate, not undocumented.

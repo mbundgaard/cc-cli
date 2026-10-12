@@ -2,8 +2,9 @@
 
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 
-- Authentication/company lifecycle, server-version and hierarchy reads implemented.
-  No configuration writes. Hierarchy reads require local organization-wide acknowledgement. Live UAT login and one v1 version read succeeded; refresh and
+- Authentication/company lifecycle, server-version, hierarchy and menu-master reads implemented.
+  No configuration writes. Hierarchy reads require local organization-wide acknowledgement;
+  menu-master reads require an explicit hierUnitId. Live UAT login and one v1 version read succeeded; refresh and
   configuration-data permissions remain unverified. Hardcode calls, not response fields.
 - Mirror BI's tested PKCE/cookies/ID-token lifecycle, not STS access tokens or client-ID decoding.
 - Requires a Simphony Configuration API account; never assume BI/STS permissions apply.
