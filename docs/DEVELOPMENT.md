@@ -12,8 +12,10 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/state.ts: fixed CC paths, strict registry/profile product tags, atomic persistence.
 - src/companies.ts: explicit company keys, staged login, renewal/expiry and lifecycle.
 - src/cli.ts: auth/company/local metadata and read task registration.
-- src/read-commands.ts: hardcoded version/hierarchy/menu-master routes, shared reviewed controls,
-  explicit v1/v2, organization acknowledgement and offline dry-run.
+- src/read-definitions.ts: reviewed hardcoded calls, paths and scope transport/level.
+- src/read-commands.ts: generic registration, shared read controls, explicit v1/v2 and dry-run.
+- src/read-filters.ts: structurally validated scope composition, no record-field allowlist.
+  Scope helpers are request construction, not client-side filtering or investigation logic.
 - src/transport.ts: HTTPS/TLS, bounded requests, no redirects/retries; loopback for tests.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
 - src/responses.ts: internal byte-exact bounded delivery, never used for token responses.
@@ -44,11 +46,12 @@ configuration alone does not establish remote CI execution. No publish workflow.
 Review individual CC endpoint contracts/version support before implementing data commands.
 The guide includes v1/v2, hierarchy scopes, translated strings, options and explicit
 pagination. Do not copy BI location/date bodies or infer universal paths/media types.
-Hierarchy tree/node and menu-master reads are implemented and synthetic-tested, not
-authorized for live calls. No broad endpoint generation or implicit schema fetches.
+Hierarchy tree/node, menu-master and KDS-display reads are implemented and synthetic-tested.
+Only narrowly authorized location-node metadata reads have been exercised live. No broad
+endpoint generation, comparison orchestration or implicit schema fetches.
 Separate any future configuration writes clearly and require explicit authorization;
 never infer write permission from a successful read or auto-retry uncertain writes.
 
-One authorized UAT login and v1 version read succeeded; live refresh and configuration
-record permissions remain unverified. Do not bypass documented inconsistencies with silent alternate grants/callbacks.
+Authorized logins, version reads and location-node metadata reads succeeded. Live refresh
+and other record-task permissions remain unverified. Do not bypass documented inconsistencies with silent alternate grants/callbacks.
 Use safe token handling, explicit requests and verbatim data as the three pillars.

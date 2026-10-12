@@ -8,13 +8,16 @@ const temp = mkdtempSync(path.join(tmpdir(), 'cc-package-'));
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error('Run through npm run test:package');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const addedTasks = [
+  {id: 'kds-displays', command: ['kds-displays','list'], route: '/config/sim/v2/devices/getKitchenDisplays', body: {searchCriteria:'where equals(hierUnitId,7)'}},
+];
 function npmRun(args) {
   const r = spawnSync(process.execPath, [npm, ...args], {encoding: 'utf8'});
   assert.equal(r.status, 0, r.stderr); return r.stdout;
 }
 try {
   const [packed] = JSON.parse(npmRun(['pack', '--ignore-scripts', '--json', '--pack-destination', temp]));
-  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md']);
+  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md', 'docs/READS.md', 'docs/KDS-DISPLAYS.md']);
   for (const f of packed.files) assert.ok(allow.has(f.path) || /^dist\/[a-z-]+\.(?:js|d\.ts)$/.test(f.path), `Unexpected package file: ${f.path}`);
   npmRun(['install', '--prefix', temp, '--ignore-scripts', '--no-audit', '--no-fund', path.join(temp, packed.filename)]);
   const shim = path.join(temp, 'node_modules', '.bin', process.platform === 'win32' ? 'cc.cmd' : 'cc');
@@ -23,7 +26,8 @@ try {
   const help = run(['--help']); assert.equal(help.status, 0); assert.match(help.stdout.replace(/\s+/g, ' '), /Safe authentication and explicit read-only tasks/);
   assert.doesNotMatch(help.stdout, /--state-dir|--insecure|test-read|pos-dimensions/);
   for (const args of [['auth', 'config', '--help'], ['auth', 'login', '--help'], ['auth', 'refresh', '--help'], ['auth', 'restore', '--help'], ['company', '--help'], ['version', '--help'], ['server-version', '--help'], ['catalogue', '--help'], ['catalogue', 'import', '--help'], ['hierarchy', 'list', '--help'], ['hierarchy', 'nodes', 'list', '--help'], ['menu-item-masters', 'list', '--help']]) assert.equal(run(args).status, 0);
-  const endpoints = run(['endpoints']); assert.equal(endpoints.status, 0); assert.deepEqual(JSON.parse(endpoints.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters']);
+  for (const task of addedTasks) assert.equal(run([...task.command, '--help']).status, 0);
+  const endpoints = run(['endpoints']); assert.equal(endpoints.status, 0); assert.deepEqual(JSON.parse(endpoints.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters', ...addedTasks.map(task => task.id)]);
   for (const name of ['test-read', 'getHierarchy', 'pos-dimensions']) { const r = run([name]); assert.equal(r.status, 6); assert.equal(r.stdout, ''); }
   const module = name => pathToFileURL(path.join(temp, 'node_modules/@muneris/cc-cli/dist', name)).href;
   // Installed modules with isolated state and loopback IDM only; never real user credentials.
@@ -33,9 +37,17 @@ try {
     import { readFile } from 'node:fs/promises';
     import { main } from ${JSON.stringify(module('cli.js'))};
     import { StateStore } from ${JSON.stringify(module('state.js'))};
+    const addedTasks = ${JSON.stringify(addedTasks)};
     let calls = 0;
     const server = http.createServer(async (req,res) => {
       calls++;
+      const task = addedTasks.find(task => task.route === req.url);
+      if (task) {
+        assert.equal(req.headers.authorization, 'Bearer synthetic-id-token');
+        const chunks=[]; for await(const chunk of req) chunks.push(chunk);
+        assert.deepEqual(JSON.parse(Buffer.concat(chunks).toString()), task.body);
+        res.end(JSON.stringify({items:[{undocumentedField:true}],hasMore:true})); return;
+      }
       if (req.url === '/config/sim/v2/getReleaseVersions') {
         assert.equal(req.headers.authorization, 'Bearer synthetic-id-token');
         res.end(JSON.stringify({simphonyEnterpriseVersion:'19.synthetic','C&CVersion':'23.synthetic'})); return;
@@ -77,14 +89,18 @@ try {
       assert.equal(await invoke(['hierarchy','list','--organization-wide','--quiet']),0);assert.equal(calls,6);
       assert.equal(await invoke(['hierarchy','nodes','list','--organization-wide','--quiet']),0);assert.equal(calls,7);
       assert.equal(await invoke(['menu-item-masters','list','--hier-unit-id','7','--quiet']),0);assert.equal(calls,8);
+      for (const [index, task] of addedTasks.entries()) {
+        assert.equal(await invoke([...task.command,'--hier-unit-id','7','--quiet']),0);assert.equal(calls,9+index);
+      }
       const catalogue=JSON.parse(await readFile(${JSON.stringify(path.join(temp, 'auth-state', 'catalogue.json'))},'utf8'));
       const environment=Object.values(catalogue.environments)[0];
       assert.deepEqual(environment.current.observations['hierarchy:v2'].fields['/items/*/undocumentedField'],['boolean']);
       assert.deepEqual(environment.current.observations['menu-item-masters:v2'].fields['/items/*/undocumentedField'],['boolean']);
+      for (const task of addedTasks) assert.deepEqual(environment.current.observations[task.id+':v2'].fields['/items/*/undocumentedField'],['boolean']);
       assert.equal(await invoke(['auth','logout']),0);assert.equal((await store.load()).tokens,undefined);
     } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
   `], {encoding: 'utf8', timeout: 30000});
   assert.equal(flow.status, 0, flow.stderr);
   assert.doesNotMatch(flow.stdout + flow.stderr, /synthetic-password|synthetic-id-token|synthetic-refresh-token/);
-  console.log(`${packed.filename}: ${packed.files.length} allowlisted files; installed shim/help/parser, reviewed read inventory, installed version/hierarchy/menu-master/catalogue and isolated PKCE/login/duplicate/refresh/logout verified. No live Oracle calls.`);
+  console.log(`${packed.filename}: ${packed.files.length} allowlisted files; installed shim/help/parser, reviewed read inventory, installed reviewed reads/catalogue and isolated PKCE/login/duplicate/refresh/logout verified. No live Oracle calls.`);
 } finally { rmSync(temp, {recursive: true, force: true}); }

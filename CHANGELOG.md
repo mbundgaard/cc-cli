@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Refactor reviewed read calls into a hardcoded capability registry with shared registration,
+  filtering/sorting/projections/paging and body-versus-criteria scope transport. No record
+  column allowlist or investigation workflow. Add bounded, AND-grouped scoped filters.
+- Implement KDS display-client reads (v2/v1) with explicit location scope, synthetic tests,
+  unchanged delivery and independent field learning. No live KDS read or writes performed.
+
 - Add menu item master reads (v2 preferred, explicit v1) with mandatory hierarchy-unit
   scope, shared request controls, extensible record fields and separate versioned learning.
   No field-based response rejection, interpretation, related reads or write commands.

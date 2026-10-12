@@ -8,10 +8,11 @@ company profiles, staged configuration, duplicate-login avoidance, expiry/renewa
 locked atomic persistence/recovery, safe status and explicit version checks.
 `cc server-version` reads deployed Enterprise and CC API versions (v2 default, explicit v1).
 Hierarchy tree/node reads require explicit organization-wide acknowledgement; menu item
-master reads require an explicit hierarchy unit. Calls are hardcoded; record fields are
+master reads require an explicit hierarchy unit; KDS display reads require an explicit
+location hierarchy unit. Calls are hardcoded; record fields are
 extensible. No writes.
-One authorized UAT login and one v1 version
-read succeeded; live refresh and configuration-data permissions remain unverified.
+Authorized logins, version reads and location-node metadata reads succeeded. Live refresh,
+menu-master and KDS-display reads remain unverified; permissions are endpoint-specific.
 
 ## Development
 
@@ -45,7 +46,8 @@ do not paste real credentials into examples, source, reports or screenshots.
 
 CC uses `id_token` like BI, not STS `access_token`. PKCE uses S256 with Base64url; Oracle
 cookies are retained unchanged. Authentication does not follow redirects or retry.
-Live login succeeded; this does not establish configuration-data permissions.
+Live login and narrowly scoped hierarchy reads succeeded; this does not establish other
+configuration-data permissions.
 No credentials are required for offline tests.
 
 State: fixed per-user `CcCli/CcCli.json`, separate from BiCli/StsCli. Registry and each
@@ -85,7 +87,8 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 - Synthetic loopback tests and installed-package checks do not prove live CC access.
 
 [CLI](docs/CLI.md) | [Authentication](docs/AUTHENTICATION.md) |
-[Field catalogue](docs/CATALOGUE.md) | [Hierarchy](docs/HIERARCHY.md) |
+[Field catalogue](docs/CATALOGUE.md) | [Shared read controls](docs/READS.md) |
+[Hierarchy](docs/HIERARCHY.md) | [KDS displays](docs/KDS-DISPLAYS.md) |
 [Menu item masters](docs/MENU-ITEM-MASTERS.md) |
 [Development](docs/DEVELOPMENT.md) | [Response foundation](docs/RESPONSES.md) |
 [Security](SECURITY.md)

@@ -1,6 +1,6 @@
 # CC CLI
 
-Authentication and explicit deployment-version, hierarchy and menu-master reads.
+Authentication and explicit deployment-version, hierarchy, menu-master and KDS-display reads.
 No configuration writes or arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
@@ -12,6 +12,7 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc hierarchy list --organization-wide [controls]` | One explicit hierarchy-tree page; v2 preferred, explicit v1 |
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
 | `cc menu-item-masters list --hier-unit-id <id> [controls]` | One explicit master-record page; v2 preferred, explicit v1 |
+| `cc kds-displays list --hier-unit-id <location-id> [controls]` | One explicitly scoped KDS-display page; v2 preferred, explicit v1 |
 | `cc catalogue import --file <swagger.json>` | Pin documented fields locally; no network or route generation |
 | `cc catalogue show` | Local documentation, generations and archives |
 | `cc catalogue compare <operation> [--api-version v1\|v2] [--archive <id>]` | Documented versus observed fields |
@@ -40,6 +41,10 @@ history/process listings; never print actual credentials in reports.
 expiry, unknown lifetimes and recovery. `server-version` uses an empty JSON body and the
 shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omits tokens;
 `--timeout` uses the same bounds as auth. Internal test-only commands are not packaged.
+
+[Shared read controls](READS.md) defines server-side filtering/sorting/projection, explicit
+scope transport and one-page execution. [KDS displays](KDS-DISPLAYS.md) uses location-scoped
+criteria; it does not fetch controllers or any other records automatically.
 
 [Hierarchy](HIERARCHY.md) documents JSON/file/stdin, explicit paging, filters/projections,
 version-specific language controls and scope acknowledgement.

@@ -3,9 +3,9 @@
 Report issues privately to support@muneris.dk. Never attach passwords, auth cookies,
 tokens, client account state, payment/employee data or unreviewed configuration exports.
 
-CC is private/unpublished. Explicit version/hierarchy/menu-master reads are implemented; no business
-writes. One authorized login and v1 version read succeeded. Configuration-data permissions
-and live refresh remain unverified; offline tests do not prove entitlement.
+CC is private/unpublished. Explicit reviewed read tasks are implemented; no business writes. Authorized logins,
+version reads and location-node metadata reads succeeded. Other task permissions and
+live refresh remain unverified; offline tests do not prove entitlement.
 
 Stored tokens/verifiers are credential-bearing plaintext in a fixed CcCli user directory.
 Protect that directory and backups; never share it or place it in source control. Passwords
