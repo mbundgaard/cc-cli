@@ -1,7 +1,7 @@
 # CC CLI
 
 Authentication and explicit deployment-version, hierarchy, menu-master, KDS-display, order-device, workstation and order-type reads.
-Guarded single-record order-device updates are opt-in; no other writes or arbitrary endpoints.
+Guarded single-record order-device updates and KDS display CRUD writes are opt-in; no arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
 | Command | Effect |
@@ -18,6 +18,8 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
 | `cc menu-item-masters list --hier-unit-id <id> [controls]` | One explicit master-record page; v2 preferred, explicit v1 |
 | `cc kds-displays list --hier-unit-id <location-id> [controls]` | One explicitly scoped KDS-display page; v2 preferred, explicit v1 |
+| `cc kds-displays create/update --hier-unit-id ... --object-num ... --audit-ref ... --file ... [--dry-run/--prepare/--execute]` | One v2 display, offline by default; guarded approval/execution |
+| `cc kds-displays delete --hier-unit-id ... --object-num ... --audit-ref ... [--prepare/--execute]` | One identity-only deletion; execute requires approval, risks acknowledgement and --confirm-delete <object-number> |
 | `cc order-devices list --hier-unit-id <rvc-id> [controls]` | One explicitly scoped order-device page; v2 preferred, explicit v1 |
 | `cc workstations list --hier-unit-id <location-id> [controls]` | One location's workstation page; hierUnitId is sent in JSON |
 | `cc order-types list --hier-unit-id <id> [controls]` | One scoped order-type name page; v1 lower-case route retained |
@@ -52,7 +54,9 @@ shared pinned-company renewal/delivery lifecycle. `--dry-run` is offline and omi
 `--timeout` uses the same bounds as auth. Internal test-only commands are not packaged.
 
 [Shared read controls](READS.md) defines server-side filtering/sorting/projection, explicit
-scope transport and one-page execution. [KDS displays](KDS-DISPLAYS.md) uses location-scoped
+scope transport and one-page execution. [KDS display CRUD](KDS-CRUD.md) documents guarded
+location-scoped create/update/delete (including nested child settings), not a copy workflow.
+[KDS displays](KDS-DISPLAYS.md) uses location-scoped
 criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fetches
 related records automatically when listing. [Order-device updates](ORDER-DEVICE-UPDATES.md)
 require explicit ownership checks, a location/RVC boundary, matching payload identities and

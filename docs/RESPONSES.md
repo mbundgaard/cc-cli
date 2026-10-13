@@ -1,6 +1,6 @@
 # Response foundation
 
-Explicit reads and the single-record order-device update use the shared delivery layer
+Explicit reads, order-device updates and single-record KDS CRUD writes use the shared delivery layer
 ported from BI. Authorized version/hierarchy/KDS/order-device reads succeeded; live
 updates remain unverified. Internal write-ownership checks are bounded validation reads,
 not data exports or snapshots.

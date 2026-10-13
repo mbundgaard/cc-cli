@@ -3,10 +3,13 @@
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 
 - Auth/company, version, hierarchy, menu-master, KDS-display, order-device, workstation and
-  order-type names/parameters reads; guarded single-record v2 order-device updates.
-  Update defaults offline; --prepare does ownership checks and issues a one-use approval;
+  order-type names/parameters reads; guarded v2 order-device updates and KDS display CRUD.
+  Writes default offline; --prepare does ownership/existence checks and issues a one-use approval;
   --execute requires matching payload/current record/boundary/audit and risk acknowledgement.
   Location/RVC boundaries are private user state, never customer IDs hardcoded into source.
+  KDS create requires absence; update/delete require existence. Delete requires object-number
+  confirmation. Documented nested KDS arrays are child settings, never display batches.
+  Copying settings/comparing locations stays outside the CLI; no silent identity/alias/IP rewrites.
   No automatic merge, snapshots, readback, rollback or retry. No other writes.
   Workstation responses may contain sensitive nested peripheral settings;
   preserve exact bytes, keep exports private and never paste credentials into reports.

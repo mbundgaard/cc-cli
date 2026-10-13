@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Complete the first CRUD task family with v2 KDS display create/update/delete alongside
+  existing list reads. One location-owned display per write, guarded presence/absence,
+  action-bound one-use approval, delete confirmation and reviewed child arrays. No batch,
+  automatic copy/alias/IP rewriting, merge, snapshot, readback, rollback or retry.
+- Extract the shared guarded-write lifecycle without widening order-device update scope.
+  KDS and order-device approvals are separate; registry/write locks and location boundary
+  are shared. Location-only boundaries may omit RVC IDs. No live KDS writes performed.
+
 - Add guarded single-record v2 order-device updates: private explicit account/environment/
   location/RVC boundary; offline review by default; three ownership/existence proofs;
   reviewed 15-minute one-use approvals bound to payload/current record/audit/boundary.

@@ -4,7 +4,7 @@ Report issues privately to support@muneris.dk. Never attach passwords, auth cook
 tokens, client account state, payment/employee data or unreviewed configuration exports.
 
 CC is private/unpublished. Explicit reviewed reads and guarded single-record order-device
-updates are implemented. Authorized login/version/hierarchy/KDS/order-device reads succeeded.
+updates and KDS display CRUD are implemented. Authorized login/version/hierarchy/KDS/order-device reads succeeded.
 Live updates, refresh and other task permissions remain unverified; offline tests do not
 prove entitlement, omission/null behavior or concurrency safety.
 
@@ -27,6 +27,12 @@ Approvals are consumed before sending; uncertain outcomes require independent re
 Omitted fields may clear values; preflight is not atomic with POST. Unverified fields are
 opt-in and cannot be proven harmless. CLI guards do not replace Oracle permission controls
 and cannot constrain another client or deliberate local-state tampering.
+[KDS CRUD](docs/KDS-CRUD.md) shares these protections, checks absence for create and
+existence for update/delete, and requires an extra delete confirmation. Its update API
+may add records: preflight is not a transactional update-only guarantee. Nested child
+arrays may replace data. Source database IDs and descriptive optionsExt are not writable
+copy targets; names/IPs are deliberately not changed by the CLI. No automatic cascades,
+reference repairs or location synchronization.
 Data responses use shared exact/private-file delivery; no raw endpoint CLI exists.
 Synthetic test commands are excluded from the installed package.
 

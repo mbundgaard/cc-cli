@@ -2,6 +2,8 @@
 
 `cc kds-displays list --hier-unit-id <location-hierarchy-unit>` is a single read-only POST.
 Oracle calls this task **Get Kitchen Display Clients**; it returns KDS display configuration.
+Guarded single-display [create/update/delete](KDS-CRUD.md) complete this CRUD family.
+Listing stays read-only; copying/comparison workflows remain outside the CLI.
 
 | Contract | Hardcoded path |
 |---|---|

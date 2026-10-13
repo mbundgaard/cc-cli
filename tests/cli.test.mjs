@@ -15,7 +15,7 @@ test('production exposes reviewed reads and guarded writes, never synthetic or B
     if (args[0] === 'endpoints') {
       const inventory = JSON.parse(r.stdout).data;
       assert.deepEqual(inventory.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters', 'kds-displays', 'order-devices', 'workstations', 'order-types', 'order-type-parameters']);
-      assert.deepEqual(inventory.writeEndpoints.map(item => item.path), ['/config/sim/v2/devices/updateOrderDevices']);
+      assert.deepEqual(inventory.writeEndpoints.map(item => item.path), ['/config/sim/v2/devices/updateOrderDevices', '/config/sim/v2/devices/kitchenDisplays', '/config/sim/v2/devices/updateKitchenDisplays', '/config/sim/v2/devices/deleteKitchenDisplays']);
     }
   }
   for (const args of [['test-read'], ['pos-dimensions'], ['getHierarchy'], ['--state-dir', 'elsewhere'], ['--insecure']]) {

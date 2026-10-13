@@ -22,7 +22,7 @@ export interface WriteScope extends WriteIdentity {
   locationNumber: number; locationHierarchyUnitId: number; rvcHierarchyUnitIds: number[];
 }
 export interface WriteApproval {
-  schemaVersion: 1; product: 'cc-order-device-approval'; id: string; requestHash: string;
+  schemaVersion: 1; product: 'cc-order-device-approval' | 'cc-kds-display-approval'; id: string; requestHash: string;
   expiresAt: number; status: 'prepared' | 'consumed';
 }
 export function positiveId(value: unknown, label: string): asserts value is number {
@@ -36,7 +36,7 @@ export function validateScope(value: unknown): WriteScope {
     throw new CliError(Exit.state, 'Invalid CC write boundary; no network permitted');
   }
   baseUrl(scope.apiUrl); positiveId(scope.locationNumber, 'Location number'); positiveId(scope.locationHierarchyUnitId, 'Location hierarchy ID');
-  if (!scope.rvcHierarchyUnitIds.length || scope.rvcHierarchyUnitIds.length > 100 || new Set(scope.rvcHierarchyUnitIds).size !== scope.rvcHierarchyUnitIds.length) throw new CliError(Exit.state, 'Invalid RVC boundary');
+  if (scope.rvcHierarchyUnitIds.length > 100 || new Set(scope.rvcHierarchyUnitIds).size !== scope.rvcHierarchyUnitIds.length) throw new CliError(Exit.state, 'Invalid RVC boundary');
   scope.rvcHierarchyUnitIds.forEach(id => positiveId(id, 'RVC hierarchy ID'));
   if (scope.rvcHierarchyUnitIds.includes(scope.locationHierarchyUnitId)) throw new CliError(Exit.state, 'Location and RVC IDs must be distinct');
   return scope;
@@ -49,9 +49,13 @@ export async function withFileLock<T>(file: string, run: () => Promise<T>): Prom
 }
 export class WriteScopeStore {
   readonly file: string; readonly approvalFile: string; readonly lock: string;
-  constructor(readonly directory: string) {
+  readonly approvalProduct: WriteApproval['product'];
+  constructor(readonly directory: string, namespace: 'order-device' | 'kds-display' = 'order-device') {
+    if (!['order-device', 'kds-display'].includes(namespace)) throw new CliError(Exit.state, 'Unsupported approval namespace');
+    this.approvalProduct = namespace === 'order-device' ? 'cc-order-device-approval' : 'cc-kds-display-approval';
     this.file = path.join(directory, 'write-scope.json');
-    this.approvalFile = path.join(directory, 'order-device-approval.json');
+    this.approvalFile = path.join(directory, `${namespace}-approval.json`);
+    // Retain the original shared lock filename for compatibility with existing clients.
     this.lock = path.join(directory, 'order-device-write.lock');
   }
   async load(): Promise<WriteScope> {
@@ -86,7 +90,7 @@ export class WriteScopeStore {
   async approval(): Promise<WriteApproval> {
     try {
       const value = JSON.parse(await readFile(this.approvalFile, 'utf8'));
-      if (value.schemaVersion !== 1 || value.product !== 'cc-order-device-approval' || !/^[a-f0-9]{64}$/.test(value.id) ||
+      if (value.schemaVersion !== 1 || value.product !== this.approvalProduct || !/^[a-f0-9]{64}$/.test(value.id) ||
           !/^[a-f0-9]{64}$/.test(value.requestHash) || !Number.isSafeInteger(value.expiresAt) || !['prepared', 'consumed'].includes(value.status)) throw new Error();
       return value;
     } catch { throw new CliError(Exit.state, 'No valid prepared approval; run the explicit read-only --prepare step'); }

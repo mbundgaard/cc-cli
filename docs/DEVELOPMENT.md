@@ -17,8 +17,11 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/read-filters.ts: structurally validated scope composition, no record-field allowlist.
   Scope helpers are request construction, not client-side filtering or investigation logic.
 - src/write-scope.ts: explicit account/location/RVC boundary, one-use approvals and locks.
-- src/order-device-update.ts: reviewed v2 single-object validation, ownership/existence
-  proofs, review-bound approvals and unchanged update response delivery. No snapshots/readback.
+- src/guarded-write.ts: shared review-bound, account-pinned, locked single-record lifecycle;
+  bounded ownership/existence proofs, one-use approval consumption, unchanged response delivery.
+- src/order-device-update.ts: reviewed RVC-scoped v2 update definition/field validation.
+- src/kds-display-writes.ts: reviewed location-scoped v2 create/update/delete definitions,
+  target identity rules and nested child-array validation. No source-copy workflow.
 - src/write-commands.ts: offline boundary configuration and explicit prepare/execute commands.
 - src/transport.ts: HTTPS/TLS, bounded requests, no redirects/retries; loopback for tests.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
@@ -56,7 +59,9 @@ Authorized scoped hierarchy, KDS and order-device reads have been exercised live
 endpoint generation, comparison orchestration or implicit schema fetches.
 Single-record v2 order-device updates are implemented with offline review by default,
 explicit read-only preparation and one-use approved execution inside a local boundary.
-See [update safety](ORDER-DEVICE-UPDATES.md). No automatic snapshot/readback/merge/retry.
+[KDS display CRUD](KDS-CRUD.md) shares this lifecycle with presence/absence checks and
+additional destructive confirmation. See [update safety](ORDER-DEVICE-UPDATES.md).
+No automatic snapshot/readback/merge/retry.
 Never infer write permission or omission/null/concurrency semantics from successful reads.
 
 Authorized logins and version reads also succeeded. Live updates, refresh and other

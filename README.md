@@ -16,7 +16,9 @@ Calls are hardcoded; record fields are extensible. Shared server-side filtering,
 projection and explicit paging are documented in [Read controls](docs/READS.md).
 [Single-record order-device updates](docs/ORDER-DEVICE-UPDATES.md) require a configured
 location/RVC boundary, read-only preparation, one-use approval and explicit risk acknowledgement.
-No automatic merge, snapshot, readback or retry. Other configuration writes are absent.
+[KDS display CRUD](docs/KDS-CRUD.md) adds guarded single-display create/update/delete
+alongside list reads. Names/IPs remain as authored; internal IDs never transfer between locations.
+No automatic copy workflow, merge, snapshot, readback or retry. Other writes are absent.
 Authorized logins, version/hierarchy, KDS-display and order-device reads succeeded. Live
 updates, refresh and other task permissions remain unverified; permissions are endpoint-specific.
 
@@ -84,8 +86,9 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
   Authentication responses never pass through data export handling.
 - Requests pin company identity and validate/read input before renewal.
 - No arbitrary endpoint command, automatic discovery, bulk writes, release or publication.
-- Writes stay offline by default; --prepare checks ownership without updating. --execute
-  consumes an approval before one v2 order-device update. No snapshots/readback are automatic.
+- Writes stay offline by default; --prepare checks ownership/existence without writing.
+  --execute consumes approval before one v2 order-device update or KDS create/update/delete.
+  Deletes require an additional target confirmation. No snapshots/readback are automatic.
 - `cc server-version [--api-version v1|v2] [--dry-run] [--quiet]` sends one explicit read;
   no fallback. Dry-run is offline. `cc version` still means the installed CLI version.
 - Explicit version reads establish a local catalogue generation. Release changes archive
