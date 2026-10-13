@@ -13,9 +13,9 @@ export const writeDefinitions = [
     apiVersion: 'v2', scope: 'one location-owned display inside the configured location boundary', automaticRetry: false, automaticReadback: false})),
 ];
 function controls(command: Command, scope: string): Command {
-  return command.requiredOption('--hier-unit-id <id>', `Target ${scope} hierarchy unit ID, inside the configured boundary`, integer)
+  return command.addHelpText('after', '\nAudit reference is automatic: Muneris CC-CLI // <saved username>. Maximum 50 printable ASCII characters; no override or truncation.\n')
+    .requiredOption('--hier-unit-id <id>', `Target ${scope} hierarchy unit ID, inside the configured boundary`, integer)
     .requiredOption('--object-num <number>', 'Target object number', integer)
-    .requiredOption('--audit-ref <text>', 'Explicit Simphony audit reference; printable ASCII')
     .option('--json <json>', 'One explicit object; never a collection or automatic merge')
     .option('--file <path>', 'One object from UTF-8 JSON file; - reads stdin once')
     .option('--dry-run', 'Offline exact action/payload/target review (the default); ownership NOT verified')

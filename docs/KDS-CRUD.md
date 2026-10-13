@@ -26,10 +26,10 @@ All following values are synthetic examples, not instructions to change a live a
 ```sh
 cc write-scope set --location-number 901 --location-hier-unit-id 70 --confirm-company "Synthetic@idm.example.com" --confirm-location 901
 cc kds-displays list --hier-unit-id 70 --search-criteria "equals(objectNum,4)" --include-all detailed
-cc kds-displays update --hier-unit-id 70 --object-num 4 --audit-ref "Reviewed synthetic change" --file display.json --dry-run
-cc kds-displays update --hier-unit-id 70 --object-num 4 --audit-ref "Reviewed synthetic change" --file display.json --prepare
+cc kds-displays update --hier-unit-id 70 --object-num 4 --file display.json --dry-run
+cc kds-displays update --hier-unit-id 70 --object-num 4 --file display.json --prepare
 # Review the complete target/action/payload, differences, omitted fields and risks first.
-cc kds-displays update --hier-unit-id 70 --object-num 4 --audit-ref "Reviewed synthetic change" --file display.json --execute --approve "<approval>" --ack-update-risks
+cc kds-displays update --hier-unit-id 70 --object-num 4 --file display.json --execute --approve "<approval>" --ack-update-risks
 ```
 
 Create uses the same flags with `create` instead of `update`. Both require one authored
@@ -42,14 +42,18 @@ body, visible in dry-run. If JSON/file is provided, only those two matching fiel
 accepted. Execution additionally repeats the target object number:
 
 ```sh
-cc kds-displays delete --hier-unit-id 70 --object-num 4 --audit-ref "Reviewed synthetic deletion" --prepare
-cc kds-displays delete --hier-unit-id 70 --object-num 4 --audit-ref "Reviewed synthetic deletion" --execute --approve "<approval>" --ack-update-risks --confirm-delete 4
+cc kds-displays delete --hier-unit-id 70 --object-num 4 --prepare
+cc kds-displays delete --hier-unit-id 70 --object-num 4 --execute --approve "<approval>" --ack-update-risks --confirm-delete 4
 ```
 
 Each preparation/execution performs exactly two prerequisite reads: validate the location
 number/type against the boundary; then check the target by location hierarchy ID AND
 object number. Incomplete/ambiguous/foreign responses fail closed. No hierarchy traversal,
 controller lookup, dependent-record repair, deletion cascade check or automatic pagination.
+
+The audit reference is automatic: `Muneris CC-CLI // <saved username>`. It must fit 50
+printable ASCII characters, without truncation or custom overrides. Controlled KDS update
+probes on CCAPI 23.8.0.1 accepted 50 and rejected 51 ASCII characters twice each.
 
 Approval binds the action/route, boundary, complete authored payload, audit reference and
 fresh target record (or confirmed absence). It expires after 15 minutes and is consumed
@@ -94,7 +98,8 @@ single-record updates and retain target-owned database identities. No automatic 
 or deletion reconciles extra/missing displays.
 
 There are **no automatic before-snapshots, post-write readbacks, retries or rollbacks**.
-No live KDS writes have been validated. HTTP success is not verified application or proof
+A scoped live KDS update and audit-header boundary probes succeeded. Create/delete and
+full nested omission/null/concurrency behavior remain live-unverified. HTTP success is not verified application or proof
 that the resulting effective configuration matches a source. Responses retain original
 bytes/HTTP status via [normal delivery](RESPONSES.md); write responses are not read-schema
 observations. Uncertain outcomes consume approval and require independent reconciliation.

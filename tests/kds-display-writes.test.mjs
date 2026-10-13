@@ -32,7 +32,7 @@ async function fixture(t,action='update',respond){
       assert.deepEqual(request.body,{searchCriteria:'where (equals(hierUnitId,70) and equals(objectNum,4))',includeAll:'detailed',limit:2,offset:0});
       res.end(JSON.stringify(list(current?[current]:[])));return;
     }
-    assert.equal(req.url,routes[action]);assert.equal(req.headers['simphony-audittrailref'],'Synthetic KDS change');
+    assert.equal(req.url,routes[action]);assert.equal(req.headers['simphony-audittrailref'],'Muneris CC-CLI // Synthetic_User');
     current=action==='delete'?null:{...request.body,kdsClientId:501,hierUnitObjNum:901};
     res.end(action==='delete'?' {"msg":"1 record deleted"} ':' {"hierUnitId":70,"objectNum":4} ');
   });
@@ -40,7 +40,7 @@ async function fixture(t,action='update',respond){
   await s.store.mutateCompanies(async registry=>{registry.companies[registry.activeCompany].refreshAfter=new Date(Date.now()+86400000).toISOString();});
   const scopes=new WriteScopeStore(s.directory,'kds-display'),company=(await s.store.loadCompanies()).activeCompany;
   const scope=await scopes.configure(s.store,901,70,[],company,901,false);
-  const opts=extra=>({hierUnitId:70,objectNum:4,auditRef:'Synthetic KDS change',quiet:true,...(action==='delete'?{}:{json:JSON.stringify(body)}),...extra});
+  const opts=extra=>({hierUnitId:70,objectNum:4,quiet:true,...(action==='delete'?{}:{json:JSON.stringify(body)}),...extra});
   const invoke=(extra={},chosen=action)=>capture(()=>executeKdsWrite(chosen,s.store,opts(extra),async()=>{}));
   const prepare=async extra=>JSON.parse((await invoke({prepare:true,...extra})).stdout).data;
   return {...s,requests,scope,scopes,invoke,prepare,opts,setCurrent:value=>{current=value;}};
@@ -62,7 +62,7 @@ for(const action of ['create','update','delete']){
   test(`KDS ${action}: exact file/stdin review uses isolated CLI; v1/upsert are not exposed`,async t=>{
     const s=await fixture(t,action),payload=action==='delete'?{hierUnitId:70,objectNum:4}:body;
     const file=path.join(s.directory,'payload.json');await writeFile(file,JSON.stringify(payload));
-    const args=['kds-displays',action,'--hier-unit-id','70','--object-num','4','--audit-ref','Synthetic'];
+    const args=['kds-displays',action,'--hier-unit-id','70','--object-num','4'];
     for(const source of [file,'-']){
       const r=await s.run([...args,'--file',source],JSON.stringify(payload));assert.equal(r.code,0,r.stderr);assert.deepEqual(JSON.parse(r.stdout).data.body,payload);
     }

@@ -7,7 +7,7 @@ import {WriteScopeStore} from '../dist/write-scope.js';
 import {executeOrderDeviceUpdate} from '../dist/order-device-update.js';
 
 const body = {hierUnitId: 71, objectNum: 3, deviceType: 1, menuItemPrinting: 1, condimentSortType: 1, name: {'1': 'New synthetic name'}, kdsSettings: {beepOnNewOrder: 0}};
-const options = extra => ({hierUnitId: 71, objectNum: 3, auditRef: 'Synthetic reviewed change', json: JSON.stringify(body), quiet: true, ...extra});
+const options = extra => ({hierUnitId: 71, objectNum: 3, json: JSON.stringify(body), quiet: true, ...extra});
 const list = items => ({items, count: items.length, totalResults: items.length, hasMore: false, offset: 0});
 async function capture(action) {
   const output = [], original = process.stdout.write;
@@ -44,7 +44,7 @@ test('offline default/dry-run and CLI help; boundary and invalid input precede r
   await s.store.mutateCompanies(async registry => {registry.companies[registry.activeCompany].refreshAfter='2000-01-01T00:00:00Z';});
   const before = await readFile(s.store.file, 'utf8');
   assert.equal(JSON.parse((await s.invoke({})).stdout).data.networkRequests, 0);
-  const args=['order-devices','update','--hier-unit-id','71','--object-num','3','--audit-ref','Synthetic','--json',JSON.stringify(body),'--dry-run'];
+  const args=['order-devices','update','--hier-unit-id','71','--object-num','3','--json',JSON.stringify(body),'--dry-run'];
   assert.equal((await s.run(args)).code, 0);
   assert.equal((await s.run(['order-devices','update','--help'])).code, 0);
   assert.equal((await s.run([...args,'--api-version','v1'])).code, 6);
@@ -71,7 +71,7 @@ test('prepare verifies duplicate placements, shows submitted changes/omissions a
   const result=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true});
   assert.equal(result.value,0); assert.equal(result.stdout,'{"hierUnitId":71,"objectNum":3}'); assert.equal(s.requests.length,7);
   const update=s.requests.at(-1); assert.equal(update.url,'/config/sim/v2/devices/updateOrderDevices'); assert.deepEqual(update.body,body);
-  assert.equal(update.headers['simphony-audittrailref'],'Synthetic reviewed change');
+  assert.equal(update.headers['simphony-audittrailref'],'Muneris CC-CLI // Synthetic_User');
   assert.equal(s.requests.filter(r=>r.url.endsWith('updateOrderDevices')).length,1);
   assert.equal((await s.scopes.approval()).status,'consumed');
   await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}),/consumed/); assert.equal(s.requests.length,7);
@@ -162,7 +162,7 @@ test('file is read once before checks; later edits cannot replace the approved w
 });
 test('file and stdin dry-run use the same validator and remain offline',async t=>{
   const s=await fixture(t),file=path.join(s.directory,'input.json');await writeFile(file,JSON.stringify(body));
-  const args=['order-devices','update','--hier-unit-id','71','--object-num','3','--audit-ref','Synthetic'];
+  const args=['order-devices','update','--hier-unit-id','71','--object-num','3'];
   for(const [source,text] of [[file,''],['-',JSON.stringify(body)]]){
     const result=await s.run([...args,'--file',source],text);assert.equal(result.code,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout).data.body,body);
   }

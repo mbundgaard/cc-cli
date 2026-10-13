@@ -39,10 +39,10 @@ partial-update recipe: absent optional fields may be cleared.
 ```
 
 ```sh
-cc order-devices update --hier-unit-id 71 --object-num 3 --audit-ref "Reviewed synthetic change" --file update.json --dry-run
-cc order-devices update --hier-unit-id 71 --object-num 3 --audit-ref "Reviewed synthetic change" --file update.json --prepare
+cc order-devices update --hier-unit-id 71 --object-num 3 --file update.json --dry-run
+cc order-devices update --hier-unit-id 71 --object-num 3 --file update.json --prepare
 # Review the full payload, differences, missing fields and risks before approving.
-cc order-devices update --hier-unit-id 71 --object-num 3 --audit-ref "Reviewed synthetic change" --file update.json --execute --approve "<approval-from-prepare>" --ack-update-risks
+cc order-devices update --hier-unit-id 71 --object-num 3 --file update.json --execute --approve "<approval-from-prepare>" --ack-update-risks
 ```
 
 JSON/file/stdin is read once per invocation, before renewal. Dry-run stays offline and
@@ -88,7 +88,12 @@ reconciled independently before deliberately preparing another; do not blindly r
   objects/types must retain their documented shapes. No guessed null-to-omission conversion.
 - Exact numeric JSON text is retained for unverified fields. No renaming, bit decoding,
   response normalization or automatic insertion of missing fields occurs.
-- `--audit-ref` is a required printable-ASCII header value, maximum 2000 characters.
+- Audit reference is generated as `Muneris CC-CLI // <saved username>` from the pinned
+  account. It is shown in dry-run/preparation and bound into approval. No --audit-ref override.
+  Require printable ASCII and at most 50 characters (username at most 32 characters).
+  Never truncate/normalize the username; invalid or overlong references fail before networking.
+  The 50/51 ASCII boundary was live-confirmed for KDS updates on CCAPI 23.8.0.1; the CLI
+  applies this conservative cap to all writes, not a claim about every Oracle deployment.
   `--timeout` is a per-request 0 < seconds <= 300 bound. Safety warnings remain with --quiet.
 
 ## Limits of the guarantee

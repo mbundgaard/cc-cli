@@ -6,6 +6,8 @@ Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
   order-type names/parameters reads; guarded v2 order-device updates and KDS display CRUD.
   Writes default offline; --prepare does ownership/existence checks and issues a one-use approval;
   --execute requires matching payload/current record/boundary/audit and risk acknowledgement.
+  Every configuration write uses Muneris CC-CLI // <saved username> for its audit header;
+  no override, location/task-specific tag or truncation. Enforce 50 printable ASCII chars.
   Location/RVC boundaries are private user state, never customer IDs hardcoded into source.
   KDS create requires absence; update/delete require existence. Delete requires object-number
   confirmation. Documented nested KDS arrays are child settings, never display batches.

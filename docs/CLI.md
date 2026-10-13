@@ -10,7 +10,7 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc endpoints` | Local hardcoded read/write inventory and version mappings |
 | `cc write-scope set --location-number ... --location-hier-unit-id ... --rvc-hier-unit-ids ... --confirm-company ... --confirm-location ... [--replace]` | Explicit local write boundary; no network |
 | `cc write-scope show` / `cc write-scope disable` | Inspect/disable the local boundary |
-| `cc order-devices update --hier-unit-id ... --object-num ... --audit-ref ... --file ... [--dry-run]` | Offline exact payload review; default mode |
+| `cc order-devices update --hier-unit-id ... --object-num ... --file ... [--dry-run]` | Offline exact payload review; default mode |
 | `cc order-devices update ... --prepare` | Three ownership/existence checks; proposed changes and one-use approval, no update |
 | `cc order-devices update ... --execute --approve ... --ack-update-risks` | Repeat checks, consume approval, send one v2 update; no readback |
 | `cc server-version [--api-version v1\|v2] [--dry-run] [--quiet]` | Explicit deployed Enterprise/CC API versions; default v2, no fallback |
@@ -18,8 +18,8 @@ Use `node bin/cc.js` during development. The package installs the command `cc`.
 | `cc hierarchy nodes list --organization-wide [controls]` | One explicit hierarchy-node page; v2 only |
 | `cc menu-item-masters list --hier-unit-id <id> [controls]` | One explicit master-record page; v2 preferred, explicit v1 |
 | `cc kds-displays list --hier-unit-id <location-id> [controls]` | One explicitly scoped KDS-display page; v2 preferred, explicit v1 |
-| `cc kds-displays create/update --hier-unit-id ... --object-num ... --audit-ref ... --file ... [--dry-run/--prepare/--execute]` | One v2 display, offline by default; guarded approval/execution |
-| `cc kds-displays delete --hier-unit-id ... --object-num ... --audit-ref ... [--prepare/--execute]` | One identity-only deletion; execute requires approval, risks acknowledgement and --confirm-delete <object-number> |
+| `cc kds-displays create/update --hier-unit-id ... --object-num ... --file ... [--dry-run/--prepare/--execute]` | One v2 display, offline by default; guarded approval/execution |
+| `cc kds-displays delete --hier-unit-id ... --object-num ... [--prepare/--execute]` | One identity-only deletion; execute requires approval, risks acknowledgement and --confirm-delete <object-number> |
 | `cc order-devices list --hier-unit-id <rvc-id> [controls]` | One explicitly scoped order-device page; v2 preferred, explicit v1 |
 | `cc workstations list --hier-unit-id <location-id> [controls]` | One location's workstation page; hierUnitId is sent in JSON |
 | `cc order-types list --hier-unit-id <id> [controls]` | One scoped order-type name page; v1 lower-case route retained |
@@ -61,7 +61,9 @@ criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fe
 related records automatically when listing. [Order-device updates](ORDER-DEVICE-UPDATES.md)
 require explicit ownership checks, a location/RVC boundary, matching payload identities and
 approval; optional unverified fields require --allow-unverified-fields. No snapshots,
-automatic merge, readback or retry. [Workstations](WORKSTATIONS.md) uses a required location
+automatic merge, readback or retry. Every write derives its audit reference from the pinned
+saved username: `Muneris CC-CLI // <username>`. No --audit-ref override. The complete reference
+must fit 50 printable ASCII characters; invalid/overlong usernames fail locally, not truncate. [Workstations](WORKSTATIONS.md) uses a required location
 hierUnitId body parameter; nested device settings may be sensitive.
 [Order types](ORDER-TYPES.md) exposes names and parameters as separate explicit calls;
 no inheritance resolution or implicit companion reads.

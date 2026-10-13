@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Standardize every configuration write audit reference as `Muneris CC-CLI // <saved username>`.
+  Remove --audit-ref overrides; derive from the pinned account and bind into approval.
+  Enforce 50 printable ASCII characters before networking; never truncate usernames.
+  Live KDS update probes on CCAPI 23.8.0.1 accepted 50 and rejected 51 ASCII characters;
+  this cap is a conservative client policy for other write endpoints/deployments.
+
 - Complete the first CRUD task family with v2 KDS display create/update/delete alongside
   existing list reads. One location-owned display per write, guarded presence/absence,
   action-bound one-use approval, delete confirmation and reviewed child arrays. No batch,

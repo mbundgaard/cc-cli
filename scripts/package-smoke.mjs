@@ -61,12 +61,12 @@ try {
           assert.ok(['/config/sim/v2/devices/kitchenDisplays','/config/sim/v2/devices/updateKitchenDisplays','/config/sim/v2/devices/deleteKitchenDisplays'].includes(req.url));
           const deleting=req.url.endsWith('deleteKitchenDisplays');
           assert.deepEqual(body,deleting?{hierUnitId:70,objectNum:4}:kdsBody);
-          assert.equal(req.headers['simphony-audittrailref'],'Synthetic reviewed change');
+          assert.equal(req.headers['simphony-audittrailref'],'Muneris CC-CLI // Synthetic_User');
           kdsRecord=deleting?null:body;updates++;res.end(JSON.stringify(deleting?{msg:'1 record deleted'}:{hierUnitId:70,objectNum:4}));return;
         }
         if(req.url==='/config/sim/v2/devices/getOrderDevices'){respond([updateBody]);return;}
         assert.equal(req.url,'/config/sim/v2/devices/updateOrderDevices');assert.deepEqual(body,updateBody);
-        assert.equal(req.headers['simphony-audittrailref'],'Synthetic reviewed change');updates++;res.end(JSON.stringify({hierUnitId:71,objectNum:3}));return;
+        assert.equal(req.headers['simphony-audittrailref'],'Muneris CC-CLI // Synthetic_User');updates++;res.end(JSON.stringify({hierUnitId:71,objectNum:3}));return;
       }
       const task = addedTasks.find(task => task.route === req.url);
       if (task) {
@@ -126,7 +126,7 @@ try {
       for (const task of addedTasks) assert.deepEqual(environment.current.observations[task.id+':v2'].fields['/items/*/undocumentedField'],['boolean']);
       writePhase=true;const readCalls=calls;
       assert.equal(await invoke(['write-scope','set','--location-number','901','--location-hier-unit-id','70','--rvc-hier-unit-ids','71','--confirm-company',saved.activeCompany,'--confirm-location','901']),0);
-      const updateArgs=['order-devices','update','--hier-unit-id','71','--object-num','3','--audit-ref','Synthetic reviewed change','--json',JSON.stringify(updateBody),'--quiet'];
+      const updateArgs=['order-devices','update','--hier-unit-id','71','--object-num','3','--json',JSON.stringify(updateBody),'--quiet'];
       assert.equal(await invoke([...updateArgs,'--dry-run']),0);assert.equal(calls,readCalls);
       assert.equal(await invoke([...updateArgs,'--prepare']),0);assert.equal(calls,readCalls+3);assert.equal(updates,0);
       const approval=JSON.parse(await readFile(${JSON.stringify(path.join(temp, 'auth-state', 'order-device-approval.json'))},'utf8'));
@@ -134,7 +134,7 @@ try {
       kdsPhase=true;
       for(const action of ['create','update','delete']) {
         const before=calls;
-        const args=['kds-displays',action,'--hier-unit-id','70','--object-num','4','--audit-ref','Synthetic reviewed change','--quiet',...(action==='delete'?[]:['--json',JSON.stringify(kdsBody)])];
+        const args=['kds-displays',action,'--hier-unit-id','70','--object-num','4','--quiet',...(action==='delete'?[]:['--json',JSON.stringify(kdsBody)])];
         assert.equal(await invoke([...args,'--dry-run']),0);assert.equal(calls,before);
         assert.equal(await invoke([...args,'--prepare']),0);assert.equal(calls,before+2);
         const approval=JSON.parse(await readFile(${JSON.stringify(path.join(temp, 'auth-state', 'kds-display-approval.json'))},'utf8'));

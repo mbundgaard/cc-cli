@@ -17,7 +17,7 @@ export const writeRisks = [
   'One top-level record only; nested settings may affect child rows. No automatic snapshot, readback, retry, or rollback.',
 ];
 export interface GuardedWriteOptions extends QueryOptions {
-  hierUnitId: number; objectNum: number; auditRef: string; prepare?: boolean; execute?: boolean;
+  hierUnitId: number; objectNum: number; prepare?: boolean; execute?: boolean;
   approve?: string; ackUpdateRisks?: boolean; allowUnverifiedFields?: boolean; confirmDelete?: number;
 }
 export interface GuardedWriteDefinition {
@@ -27,10 +27,16 @@ export interface GuardedWriteDefinition {
 }
 export const pointer = (key: string) => key.replace(/~/g, '~0').replace(/\//g, '~1');
 export function object(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value) && !isRawJson(value); }
+export function auditReference(username: unknown): string {
+  if (typeof username !== 'string' || !username.trim() || /[\u0000-\u001f\u007f-\uffff]/.test(username)) throw new CliError(Exit.usage, 'The saved username must be nonblank printable ASCII for the audit reference; no write sent');
+  const reference = `Muneris CC-CLI // ${username}`;
+  if (reference.length > 50) throw new CliError(Exit.usage, 'Muneris CC-CLI // <saved username> exceeds the 50-character audit-reference limit; username was not truncated and no write sent');
+  return reference;
+}
 export function validateWriteControls(body: Record<string, unknown>, options: GuardedWriteOptions): void {
   positiveId(options.hierUnitId, '--hier-unit-id'); positiveId(options.objectNum, '--object-num');
   if (body.hierUnitId !== options.hierUnitId || body.objectNum !== options.objectNum) throw new CliError(Exit.usage, 'Payload hierUnitId/objectNum must exactly match the explicit target flags');
-  if (typeof options.auditRef !== 'string' || !options.auditRef.trim() || options.auditRef.length > 2000 || /[\u0000-\u001f\u007f-\uffff]/.test(options.auditRef)) throw new CliError(Exit.usage, '--audit-ref must be nonblank printable ASCII, at most 2000 characters');
+  if (Object.hasOwn(options, 'auditRef')) throw new CliError(Exit.usage, 'Custom audit references are not supported; the CLI uses Muneris CC-CLI // <saved username>');
   if (!Number.isFinite(options.timeout ?? 30) || (options.timeout ?? 30) <= 0 || (options.timeout ?? 30) > 300) throw new CliError(Exit.usage, 'Timeout must be positive and at most 300 seconds');
   if ([options.dryRun, options.prepare, options.execute].filter(Boolean).length > 1) throw new CliError(Exit.usage, 'Choose only one of --dry-run, --prepare, --execute');
   if ((options.approve || options.ackUpdateRisks) && !options.execute) throw new CliError(Exit.usage, '--approve and --ack-update-risks require --execute');
@@ -67,13 +73,14 @@ export async function executeGuardedWrite(definition: GuardedWriteDefinition, st
   const scopes = new WriteScopeStore(store.directory, definition.namespace), scope = await scopes.load();
   const initial = activeState(await store.loadCompanies());
   if (digest(writeIdentity(initial)) !== digest({company: scope.company, apiUrl: scope.apiUrl, authDigest: scope.authDigest})) throw new CliError(Exit.state, 'Selected company/account/environment differs from the write boundary');
+  const auditRef = auditReference(initial.auth.username);
   const body = await inputBody(options); // Read once, before auth/data activity.
   if (definition.action === 'delete' && options.json === undefined && options.file === undefined) {
     body.hierUnitId = options.hierUnitId; body.objectNum = options.objectNum;
   }
   const unverifiedFields = definition.validate(body, options, scope), wireBody = JSON.stringify(body);
   const plan = {action: definition.action, method: 'POST', url: scope.apiUrl + definition.path,
-    headers: {'Content-Type': 'application/json', 'Simphony-AuditTrailRef': options.auditRef},
+    headers: {'Content-Type': 'application/json', 'Simphony-AuditTrailRef': auditRef},
     company: scope.company, locationNumber: scope.locationNumber, locationHierarchyUnitId: scope.locationHierarchyUnitId,
     ...(definition.scope === 'rvc' ? {rvcHierarchyUnitId: options.hierUnitId} : {}),
     objectNum: options.objectNum, body, unverifiedFields, risks: definition.risks};
