@@ -59,7 +59,7 @@ export function validateState(value: unknown): State {
     if (!object(value.tokens)) fail('Invalid tokens object');
     if (Object.keys(value.tokens).some(key => !['idToken', 'refreshToken', 'codeVerifier', 'obtainedAt', 'expiresIn'].includes(key))) fail('Unknown token field; CC requires id_token, not STS access_token');
     for (const key of ['idToken', 'refreshToken', 'codeVerifier', 'obtainedAt']) {
-      if (typeof value.tokens[key] !== 'string' || !value.tokens[key]) fail(`Missing or invalid tokens.${key}`);
+      if (typeof value.tokens[key] !== 'string' || !value.tokens[key].trim() || /[\u0000-\u001f\u007f]/.test(value.tokens[key])) fail(`Missing or invalid tokens.${key}`);
     }
     const time = Date.parse(value.tokens.obtainedAt as string), seconds = value.tokens.expiresIn;
     if (!timestamp(value.tokens.obtainedAt as string) || (seconds !== undefined && (typeof seconds !== 'number' || !Number.isSafeInteger(seconds) || seconds < 0 || !Number.isFinite(new Date(time + seconds * 1000).getTime())))) fail('Invalid token lifetime');

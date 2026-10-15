@@ -27,6 +27,33 @@ exports. Only allowlisted machine error codes and HTTP statuses are exposed. A g
 No data/auth retries, redirect following or TLS bypass. Unknown auth outcomes require
 inspection before repeating login/refresh.
 
+## Common authentication contract
+
+STS, BI and CC implement these rules locally, without a shared package or
+cross-repository dependency. Their token types, account setup and private state
+remain independent. STS uses access tokens; BI/CC use ID tokens.
+
+- IDM requires verified HTTPS (HTTP only for loopback tests). No redirect following,
+  TLS bypass or automatic retries. Only Oracle-supplied cookies are used unchanged.
+- Authorization accepts 2xx or 302/303; sign-in, token exchange and refresh require 2xx.
+- Sign-in must not report failure. Accept only `apiaccount://callback` (optional
+  trailing slash), without credentials, port, fragment or extra path, and exactly
+  one nonblank code. Never navigate the callback.
+- Initial login requires the product token and a refresh token. Refresh retains the
+  prior refresh token when no replacement is returned; unusable optional expiry
+  never discards rotated credentials or causes a guessed lifetime.
+- Token values must be nonblank and contain no control characters. State imports
+  reject unknown fields and foreign product state; legacy compatibility is specific
+  to the owning product, never permission to relabel another CLI's credentials.
+- Auth timeouts default to 30 seconds; positive fractional values up to 300 are accepted.
+  Local status uses `no-tokens`, `unknown-expiry`, `expired`, `expiring-soon` (under
+  five minutes remaining), or `valid`; none proves acceptance by Oracle.
+- Diagnostics withhold response bodies, callback URLs, cookies and underlying
+  network/cookie error text. Existing rotation, locking and recovery rules are unchanged.
+
+Matching synthetic regression scenarios are kept inside each repository. These
+alignment changes have not been revalidated with live Oracle calls.
+
 ## Documentation discrepancies and live limits
 
 The guide's token example uses expires_in 86400 while prose says ID tokens last 14 days

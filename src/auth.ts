@@ -25,7 +25,9 @@ export class AuthClient {
   readonly cookies = new CookieJar();
   constructor(private readonly timeoutMs = 30_000, private readonly quiet = false) {}
   private async send(stage: Stage, url: string, form?: Record<string, string>): Promise<HttpResponse> {
-    const cookie = await this.cookies.getCookieString(url);
+    let cookie: string;
+    try { cookie = await this.cookies.getCookieString(url); }
+    catch { throw new CliError(Exit.auth, 'IDM cookie jar failed; cookie contents withheld'); }
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (cookie) headers.Cookie = cookie;
     if (form) headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -52,9 +54,9 @@ export class AuthClient {
   }
   private tokens(response: HttpResponse, verifier: string, priorRefresh?: string): TokenSet {
     const value = parse(response);
-    if (typeof value.id_token !== 'string' || !value.id_token) throw new CliError(Exit.auth, 'IDM response did not contain a CC id_token; access_token is not a substitute');
+    if (typeof value.id_token !== 'string' || !value.id_token.trim() || /[\u0000-\u001f\u007f]/.test(value.id_token)) throw new CliError(Exit.auth, 'IDM response did not contain a valid CC id_token; access_token is not a substitute');
     const refreshToken = typeof value.refresh_token === 'string' && value.refresh_token ? value.refresh_token : priorRefresh;
-    if (!refreshToken) throw new CliError(Exit.auth, 'IDM response did not contain a refresh_token');
+    if (!refreshToken || !refreshToken.trim() || /[\u0000-\u001f\u007f]/.test(refreshToken)) throw new CliError(Exit.auth, 'IDM response did not contain a valid refresh_token');
     const seconds = typeof value.expires_in === 'string' && /^\d+$/.test(value.expires_in) ? Number(value.expires_in) : value.expires_in;
     const knownLifetime = typeof seconds === 'number' && Number.isSafeInteger(seconds) && seconds >= 0 && Number.isFinite(new Date(Date.now() + seconds * 1000).getTime());
     // Preserve rotated credentials even when optional expiry metadata is unusable.
@@ -82,10 +84,10 @@ export class AuthClient {
     let code: string | null;
     try {
       const redirect = new URL(signedIn.redirectUrl);
-      if (redirect.protocol !== 'apiaccount:' || redirect.hostname !== 'callback' || redirect.username || redirect.password || redirect.hash || !['', '/'].includes(redirect.pathname) || redirect.searchParams.getAll('code').length !== 1) throw new Error();
+      if (redirect.protocol !== 'apiaccount:' || redirect.hostname !== 'callback' || redirect.port || redirect.username || redirect.password || signedIn.redirectUrl.includes('#') || !['', '/'].includes(redirect.pathname) || redirect.searchParams.getAll('code').length !== 1) throw new Error();
       code = redirect.searchParams.get('code');
     } catch { throw new CliError(Exit.auth, 'Oracle returned an invalid authorization callback; URL withheld'); }
-    if (!code) throw new CliError(Exit.auth, 'Oracle redirect contained no authorization code');
+    if (!code?.trim()) throw new CliError(Exit.auth, 'Oracle redirect contained no authorization code');
     return this.tokens(await this.send('token', `${base}/token`, {
       client_id: auth.clientId!, code_verifier: verifier, redirect_uri: redirectUri,
       scope, grant_type: 'authorization_code', code,
@@ -102,6 +104,6 @@ export class AuthClient {
 }
 function requireAuth(auth: AuthConfig, login: boolean) {
   const keys: (keyof AuthConfig)[] = login ? ['authUrl', 'clientId', 'orgName', 'username'] : ['authUrl', 'clientId'];
-  const missing = keys.filter(key => !auth[key]);
-  if (missing.length) throw new CliError(Exit.notConfigured, `Missing auth configuration: ${missing.join(', ')}`, 'Run cc auth config --help');
+  const missing = keys.filter(key => typeof auth[key] !== 'string' || !auth[key]!.trim() || /[\u0000-\u001f\u007f]/.test(auth[key]!));
+  if (missing.length) throw new CliError(Exit.notConfigured, `Missing or invalid auth configuration: ${missing.join(', ')}`, 'Run cc auth config --help');
 }

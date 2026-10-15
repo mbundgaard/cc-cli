@@ -43,7 +43,7 @@ export function createProgram(store = new StateStore(), setExit: (code: number) 
     const tokens = tokenSummary(state.tokens);
     localResult('auth status', { configured: !!(state.auth.authUrl && state.auth.clientId && state.auth.orgName && state.auth.username),
       apiConfigured: !!state.auth.apiUrl, configPath: store.file,
-      state: !tokens.hasIdToken ? 'no-tokens' : tokens.expired === undefined ? 'unknown-expiry' : tokens.expired ? 'expired' : 'valid', tokens,
+      state: !tokens.hasIdToken ? 'no-tokens' : tokens.expired === undefined ? 'unknown-expiry' : tokens.expired ? 'expired' : tokens.secondsRemaining !== undefined && tokens.secondsRemaining < 300 ? 'expiring-soon' : 'valid', tokens,
       activeCompany: registry.activeCompany, pendingConfiguration: !!registry.pending,
       refreshAfter: registry.activeCompany ? registry.companies[registry.activeCompany]?.refreshAfter : undefined, serverValidated: false });
   };

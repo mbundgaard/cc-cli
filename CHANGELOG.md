@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Align the independently implemented STS/BI/CC authentication safety contract.
+  Tighten callback port/fragment and credential validation, sanitize cookie-jar errors,
+  and report expiring-soon consistently. Add matching synthetic regression scenarios.
+  Retain CC ID tokens, strict product markers and existing renewal/recovery behavior;
+  no shared package, new dependency or live authentication.
+
 - Standardize every configuration write audit reference as `Muneris CC-CLI // <saved username>`.
   Remove --audit-ref overrides; derive from the pinned account and bind into approval.
   Enforce 50 printable ASCII characters before networking; never truncate usernames.
