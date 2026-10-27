@@ -97,7 +97,9 @@ Do not delete/recreate existing displays merely to copy their settings; use revi
 single-record updates and retain target-owned database identities. No automatic creation
 or deletion reconciles extra/missing displays.
 
-There are **no automatic before-snapshots, post-write readbacks, retries or rollbacks**.
+Before-values are captured and verified at preparation and execution for updates/deletes;
+creates retain absence proof. Saving/evidence failures block writes. There are **no automatic
+restores, post-write readbacks, retries or rollbacks**.
 A scoped live KDS update and audit-header boundary probes succeeded. Create/delete and
 full nested omission/null/concurrency behavior remain live-unverified. HTTP success is not verified application or proof
 that the resulting effective configuration matches a source. Responses retain original

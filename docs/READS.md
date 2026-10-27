@@ -57,9 +57,10 @@ cc kds-displays list --hier-unit-id 7 --search-criteria "contains(name,'Prep')" 
 
 ## Delivery and boundaries
 
-Responses remain byte-exact: at most 16 KiB AND 500 lines to stdout, otherwise a complete
-private file plus receipt. Small responses can be shell-redirected; large-response stdout
-is a receipt, not the response body, so use its reported private file. There is no comparison,
+Every public read saves the byte-exact response and indexes records through the same mandatory
+pipeline. Stdout is always a compact file/capture receipt, not the data. Projections must return
+required identity fields; incomplete/failed indexing retains raw evidence but fails the capture.
+See [response rules and identity metadata](RESPONSES.md). There is no network comparison,
 merge, normalization, cross-location orchestration, ID mapping or automated related fetch.
 Unknown response fields are retained and independently learned by the metadata catalogue.
 Record values never enter that catalogue. Configuration exports can be sensitive; do not

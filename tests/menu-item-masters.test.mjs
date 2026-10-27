@@ -6,7 +6,7 @@ import { gzipSync } from 'node:zlib';
 import { buildReadRequest } from '../dist/read-commands.js';
 import { CatalogueStore, targetFor, importSpecification } from '../dist/catalogue.js';
 import { readDefinitions } from '../dist/read-commands.js';
-import { setup, tokens } from './helpers.mjs';
+import { setup, tokens, responseText } from './helpers.mjs';
 const profile = {schemaVersion: 1, product: 'cc', auth: {apiUrl: 'https://cc.example.invalid', orgName: 'Synthetic'}};
 async function ready(s) {
   await s.store.mutate(async state => {state.tokens = tokens();});
@@ -57,7 +57,7 @@ test('menu masters flags/JSON/file/stdin all send one page, preserve unknowns/op
     [['--json', JSON.stringify(body)], ''], [['--file', file], ''], [['--file', '-'], JSON.stringify(body)],
   ]) {
     const result = await s.run(['menu-item-masters', 'list', '--quiet', ...args], input);
-    assert.equal(result.code, 0, result.stderr); assert.equal(result.stdout, response);
+    assert.equal(result.code, 0, result.stderr); assert.equal(await responseText(result), response);
   }
   assert.equal(requests.length, 4); for (const request of requests) assert.deepEqual(request, {url: '/config/sim/v2/menuItems/getMenuItemMasters', body});
   const observation = (await catalogue.view(target)).environment.current.observations['menu-item-masters:v2'];
@@ -71,20 +71,20 @@ test('menu masters flags/JSON/file/stdin all send one page, preserve unknowns/op
 test('v1/v2 menu translations are not converted or combined and failures neither fallback nor enrich', async t => {
   let status = 200;
   const s = await setup(t, (req, res) => {
-    const body = req.url.includes('/v1/') ? '{"items":[{"name":{"en-US":"Synthetic"},"effectivityGroups":[{"effectivityGroupName":{"en-US":"Synthetic"}}]}]}' : '{"items":[{"name":{"1":"Synthetic"},"name2":{"1":"Synthetic"}}]}';
+    const body = req.url.includes('/v1/') ? '{"items":[{"hierUnitId":7,"objectNum":1,"name":{"en-US":"Synthetic"},"effectivityGroups":[{"effectivityGroupName":{"en-US":"Synthetic"}}]}]}' : '{"items":[{"hierUnitId":7,"objectNum":1,"name":{"1":"Synthetic"},"name2":{"1":"Synthetic"}}]}';
     res.writeHead(status); res.end(body);
   });
   const {catalogue, target} = await ready(s);
   const one = await s.run(['menu-item-masters', 'list', '--hier-unit-id', '7', '--api-version', 'v1', '--quiet']);
   const two = await s.run(['menu-item-masters', 'list', '--hier-unit-id', '7', '--quiet']);
-  assert.equal(one.code, 0); assert.equal(two.code, 0); assert.match(one.stdout, /en-US/); assert.doesNotMatch(two.stdout, /en-US/);
+  assert.equal(one.code, 0); assert.equal(two.code, 0); assert.match(await responseText(one), /en-US/); assert.doesNotMatch(await responseText(two), /en-US/);
   assert.deepEqual(Object.keys((await catalogue.view(target)).environment.current.observations), ['menu-item-masters:v1', 'menu-item-masters:v2']);
   const before = await readFile(catalogue.file, 'utf8'); status = 429;
   const failed = await s.run(['menu-item-masters', 'list', '--hier-unit-id', '7', '--quiet']); assert.equal(failed.code, 11);
   assert.equal(s.calls.length, 3); assert.equal(await readFile(catalogue.file, 'utf8'), before);
 });
 for (const compressed of [false, true]) test(`menu master large ${compressed ? 'gzip' : 'plain'} response is a complete private file plus independent metadata`, async t => {
-  const body = Buffer.from(JSON.stringify({items: [{unknownRecordField: 'x'.repeat(32 * 1024), nested: [{future: true}]}]}));
+  const body = Buffer.from(JSON.stringify({items: [{hierUnitId: 7, objectNum: 1, unknownRecordField: 'x'.repeat(32 * 1024), nested: [{future: true}]}]}));
   const s = await setup(t, (_, res) => {if (compressed) res.setHeader('Content-Encoding', 'gzip'); res.end(compressed ? gzipSync(body) : body);});
   const {catalogue, target} = await ready(s);
   const result = await s.run(['menu-item-masters', 'list', '--hier-unit-id', '7', '--quiet']); assert.equal(result.code, 0, result.stderr);
@@ -92,10 +92,10 @@ for (const compressed of [false, true]) test(`menu master large ${compressed ? '
   assert.deepEqual((await catalogue.view(target)).environment.current.observations['menu-item-masters:v2'].fields['/items/*/nested/*/future'], ['boolean']);
 });
 test('menu schemas remain independent and documented/discovered comparisons expose differences without rejecting data', async t => {
-  const s = await setup(t, (_, res) => res.end('{"items":[{"objectNum":"unexpected-string","name2":{"1":"private"},"undocumented":true}]}'));
+  const s = await setup(t, (_, res) => res.end('{"items":[{"hierUnitId":7,"objectNum":1,"futureNumber":"unexpected-string","name2":{"1":"private"},"undocumented":true}]}'));
   await ready(s);
   const paths = Object.fromEntries(['v1', 'v2'].map(version => [`/config/sim/${version}/menuItems/getMenuItemMasters`, {post: {responses: {'200': {schema: {type: 'object', properties: {items: {type: 'array', items: {type: 'object', properties: {
-    objectNum: {type: 'integer'}, name: {type: 'object'}, ...(version === 'v2' ? {name2: {type: 'object'}} : {}),
+    hierUnitId: {type: 'integer'}, objectNum: {type: 'integer'}, futureNumber: {type: 'integer'}, name: {type: 'object'}, ...(version === 'v2' ? {name2: {type: 'object'}} : {}),
   }}}}}}}}}]));
   const file = path.join(s.directory, 'spec.json'); await writeFile(file, JSON.stringify({swagger: '2.0', info: {version: 'synthetic'}, paths}));
   const imported = await importSpecification(file, readDefinitions);
@@ -105,7 +105,7 @@ test('menu schemas remain independent and documented/discovered comparisons expo
   assert.equal((await s.run(['menu-item-masters', 'list', '--hier-unit-id', '7', '--quiet'])).code, 0);
   const result = JSON.parse((await s.run(['catalogue', 'compare', 'menu-item-masters'])).stdout).data;
   assert.deepEqual(result.observedOnly, ['/items/*/undocumented']);
-  assert.deepEqual(result.typeDifferences.map(item => item.path), ['/items/*/objectNum']);
+  assert.deepEqual(result.typeDifferences.map(item => item.path), ['/items/*/futureNumber']);
   assert.ok(result.documentedNotYetObserved.includes('/items/*/name'));
   assert.equal(s.calls.length, 1);
 });

@@ -4,18 +4,20 @@ import { CatalogueStore, compareFields, contractKey, importSpecification, observ
 import { StateStore, activeState, type State } from './state.js';
 import { CliError, Exit, localResult } from './output.js';
 import type { DeliveryObserver } from './responses.js';
+import { readOperationById } from './configuration-policy.js';
 
 export async function prepareLearning(directory: string, state: State, operation: string, apiVersion: string, projection = 'default'): Promise<DeliveryObserver> {
   const catalogue = new CatalogueStore(directory), target = targetFor(state);
   const contract = contractKey(operation, apiVersion), before = await catalogue.view(target);
-  if (operation !== 'server-version' && !before.environment) throw new CliError(Exit.state, 'Run cc server-version explicitly before record reads to establish the catalogue version');
+  const establishesRelease = readOperationById(`${operation}:${apiVersion}`).catalogueRole === 'release';
+  if (!establishesRelease && !before.environment) throw new CliError(Exit.state, 'Run cc server-version explicitly before record reads to establish the catalogue version');
   return async ({ delivery }) => {
-    if (operation === 'server-version') {
+    if (establishesRelease) {
       if (delivery.kind === 'file' && delivery.bytes > 16 * 1024) throw new Error('Unexpected version response size');
       const bytes = delivery.kind === 'inline' ? delivery.body : await readFile(delivery.path);
       await catalogue.detect(target, releaseVersions(JSON.parse(bytes.toString('utf8'))));
     }
-    const view = operation === 'server-version' ? await catalogue.view(target) : before;
+    const view = establishesRelease ? await catalogue.view(target) : before;
     const fields = await observeFields(delivery, view.document?.contracts[contract]?.response);
     await catalogue.observe(target, view.environment!.current.id, contract, fields, projection, view.document?.sha256);
   };

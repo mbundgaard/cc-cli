@@ -152,7 +152,7 @@ test('schedule recheck under lock avoids duplicate automatic renewal', async t =
 });
 test('selected company is pinned during concurrent selection; request body is reused without changing ID-token identity', async t => {
   const s = await setup(t, async (req, res) => {
-    assert.equal(req.headers.authorization, 'Bearer A-id'); assert.match(req.url, /\/test-only\/A\//);
+    assert.equal(req.headers.authorization, 'Bearer A-id'); assert.equal(req.url, '/config/sim/v2/hierarchy/getHierarchy');
     const body = []; for await (const chunk of req) body.push(chunk);
     assert.match(Buffer.concat(body).toString(), /9007199254740993/); res.end('PINNED');
   });

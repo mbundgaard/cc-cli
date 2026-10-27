@@ -4,9 +4,18 @@ Authentication and explicit deployment-version, hierarchy, menu-master, KDS-disp
 Guarded single-record order-device updates and KDS display CRUD writes are opt-in; no arbitrary endpoints.
 Use `node bin/cc.js` during development. The package installs the command `cc`.
 
+Configuration dispatch defaults to reviewed reads, even where reads use POST. Unknown
+method/route combinations and mutations without a matching internal single-use permit
+are blocked before dispatch. Existing guarded approval is the only production issuer;
+there is no global write-mode flag. This is a CLI safety boundary, not a substitute for
+Oracle account permissions. All supported public reads use mandatory file-first capture/history, and supported updates/deletes
+require saved pre-change evidence. See
+see [design and implementation status](READ-ONLY-RECORD-HISTORY-DESIGN.md).
+
 | Command | Effect |
 |---|---|
 | `cc --help` | Local help |
+| `cc records list/show/history/diff ...` | [Local saved-history inspection](RECORDS.md); explicit scope, no Oracle calls or auth renewal. Network reads populate it through mandatory capture |
 | `cc endpoints` | Local hardcoded read/write inventory and version mappings |
 | `cc write-scope set --location-number ... --location-hier-unit-id ... --rvc-hier-unit-ids ... --confirm-company ... --confirm-location ... [--replace]` | Explicit local write boundary; no network |
 | `cc write-scope show` / `cc write-scope disable` | Inspect/disable the local boundary |
@@ -60,8 +69,8 @@ location-scoped create/update/delete (including nested child settings), not a co
 criteria; [Order devices](ORDER-DEVICES.md) uses RVC-scoped criteria. Neither fetches
 related records automatically when listing. [Order-device updates](ORDER-DEVICE-UPDATES.md)
 require explicit ownership checks, a location/RVC boundary, matching payload identities and
-approval; optional unverified fields require --allow-unverified-fields. No snapshots,
-automatic merge, readback or retry. Every write derives its audit reference from the pinned
+approval; optional unverified fields require --allow-unverified-fields. Before-values are saved
+and verified; no automatic restoration, merge, readback or retry. Every write derives its audit reference from the pinned
 saved username: `Muneris CC-CLI // <username>`. No --audit-ref override. The complete reference
 must fit 50 printable ASCII characters; invalid/overlong usernames fail locally, not truncate. [Workstations](WORKSTATIONS.md) uses a required location
 hierUnitId body parameter; nested device settings may be sensitive.

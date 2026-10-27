@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,readdir} from 'node:fs/promises';
 import path from 'node:path';
-import {setup,tokens} from './helpers.mjs';
+import {setup,tokens,responseText} from './helpers.mjs';
 import {WriteScopeStore} from '../dist/write-scope.js';
 import {executeKdsWrite} from '../dist/kds-display-writes.js';
 const routes={create:'/config/sim/v2/devices/kitchenDisplays',update:'/config/sim/v2/devices/updateKitchenDisplays',delete:'/config/sim/v2/devices/deleteKitchenDisplays'};
@@ -18,14 +18,14 @@ async function capture(fn){
 async function fixture(t,action='update',respond){
   let current=action==='create'?null:{...body,name:{'1':'Synthetic old display'},kdsClientId:501,hierUnitObjNum:901};
   const requests=[];
-  const list=items=>({items,count:items.length,totalResults:items.length,hasMore:false,offset:0});
+  const list=items=>({items:items.map((item,index)=>item.nodeType?{...item,hierStrucId:item.hierUnitId*100+index+1}:item),count:items.length,totalResults:items.length,hasMore:false,offset:0});
   const s=await setup(t,async(req,res)=>{
     const chunks=[];for await(const chunk of req)chunks.push(chunk);
     const raw=Buffer.concat(chunks).toString(),request={url:req.url,raw,body:JSON.parse(raw),headers:req.headers};requests.push(request);
     assert.equal(req.headers.authorization,'Bearer synthetic-id');
     if(respond&&await respond(request,res,s))return;
     if(req.url==='/config/sim/v2/hierarchy/getHierarchyNodes'){
-      assert.deepEqual(request.body,{searchCriteria:'where equals(hierUnitId,70)',include:'hierUnitId,objectNum,nodeType',limit:100,offset:0});
+      assert.deepEqual(request.body,{searchCriteria:'where equals(hierUnitId,70)',include:'hierUnitId,hierStrucId,objectNum,nodeType',limit:100,offset:0});
       res.end(JSON.stringify(list([{hierUnitId:70,objectNum:901,nodeType:'Location'},{hierUnitId:70,objectNum:901,nodeType:'Location'}])));return;
     }
     if(req.url==='/config/sim/v2/devices/getKitchenDisplays'){
@@ -53,7 +53,7 @@ for(const action of ['create','update','delete']){
     if(action==='delete'){assert.equal(plan.destructive,true);assert.equal(plan.deleteTarget.objectNum,4);}
     const metadata=await readFile(s.scopes.approvalFile,'utf8');assert.doesNotMatch(metadata,/Synthetic reference|Synthetic old|192\.0\.2|synthetic-id|panelConfiguration/);
     const result=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true,...(action==='delete'?{confirmDelete:4}:{})});
-    assert.equal(result.code,0);assert.equal(result.stdout,action==='delete'?' {"msg":"1 record deleted"} ':' {"hierUnitId":70,"objectNum":4} ');
+    assert.equal(result.code,0);assert.equal(await responseText(result),action==='delete'?' {"msg":"1 record deleted"} ':' {"hierUnitId":70,"objectNum":4} ');
     assert.equal(s.requests.length,5);assert.deepEqual(s.requests.at(-1).body,action==='delete'?{hierUnitId:70,objectNum:4}:body);
     assert.equal((await s.scopes.approval()).status,'consumed');
     await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true,...(action==='delete'?{confirmDelete:4}:{})}),/consumed/);
@@ -71,7 +71,7 @@ for(const action of ['create','update','delete']){
   test(`KDS ${action}: HTTP error preserves bytes and consumes approval; never fallback/retry`,async t=>{
     const s=await fixture(t,action,async(req,res)=>{if(req.url===routes[action]){res.writeHead(400);res.end('{"detail":"Synthetic rejection"}');return true;}});
     const plan=await s.prepare(),r=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true,...(action==='delete'?{confirmDelete:4}:{})});
-    assert.equal(r.code,11);assert.equal(r.stdout,'{"detail":"Synthetic rejection"}');assert.equal(s.requests.length,5);assert.equal((await s.scopes.approval()).status,'consumed');
+    assert.equal(r.code,11);assert.equal(await responseText(r),'{"detail":"Synthetic rejection"}');assert.equal(s.requests.length,5);assert.equal((await s.scopes.approval()).status,'consumed');
   });
   test(`KDS ${action}: dropped connection is uncertain with consumed approval`,async t=>{
     const s=await fixture(t,action,async(req,res)=>{if(req.url===routes[action]){res.destroy();return true;}});

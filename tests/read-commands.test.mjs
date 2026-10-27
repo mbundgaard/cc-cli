@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildReadRequest } from '../dist/read-commands.js';
-import { setup, tokens } from './helpers.mjs';
+import { setup, tokens, responseText } from './helpers.mjs';
 const profile = { schemaVersion: 1, product: 'cc', auth: { apiUrl: 'https://configuration.example.invalid', orgName: 'Synthetic' } };
 test('version routes are explicit, v2 preferred, empty JSON body and no invented organization header', () => {
   for (const version of ['v1', 'v2']) {
@@ -38,10 +38,10 @@ test('version reads deliver exact response, honor explicit v1 and never fallback
   await s.store.mutate(async state => { state.tokens = tokens(); });
   for (const version of ['v2', 'v1']) {
     const r = await s.run(['server-version', '--api-version', version, '--quiet']);
-    assert.equal(r.code, 0, r.stderr); assert.equal(r.stdout, body);
+    assert.equal(r.code, 0, r.stderr); assert.equal(await responseText(r), body);
     assert.equal(s.calls.at(-1), `/config/sim/${version}/getReleaseVersions`);
   }
   status = 403;
   const r = await s.run(['server-version', '--quiet']);
-  assert.equal(r.code, 11); assert.equal(r.stdout, body); assert.equal(s.calls.length, 3);
+  assert.equal(r.code, 11); assert.equal(await responseText(r), body); assert.equal(s.calls.length, 3);
 });

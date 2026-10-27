@@ -1,6 +1,19 @@
 # CC agent guide
 
 Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
+Read docs/READ-ONLY-RECORD-HISTORY-DESIGN.md as the implementation contract and
+docs/SAFETY-AND-RECORD-HISTORY.md for the user-facing promises/status. Update both
+when a stage ships; never describe planned safeguards or commands as available.
+See docs/SHARED-ENGINE-AUDIT.md for resolved findings and regression gates. Preserve the single
+configuration-exchange lifecycle; do not add per-topic policy exceptions or optional capture.
+
+- Architecture: generic execution methods with fixed reviewed capabilities, not arbitrary
+  endpoints/tasks. All configuration reads/proofs/delivery use configuration-policy.ts.
+  Only guarded-write.ts may issue internal mutation permits, after durable approval consumption.
+  See docs/READ-ONLY-RECORD-HISTORY-DESIGN.md and docs/RECORDS.md: history storage and local
+  inspection and mandatory capture are implemented. Every public read uses the same pipeline;
+  task definitions supply identity, never capture enablement. No successful raw-only fallback.
+  Updates/deletes require saved source-linked before-values at preparation and execution.
 
 - Auth/company, version, hierarchy, menu-master, KDS-display, order-device, workstation and
   order-type names/parameters reads; guarded v2 order-device updates and KDS display CRUD.
@@ -12,7 +25,8 @@ Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
   KDS create requires absence; update/delete require existence. Delete requires object-number
   confirmation. Documented nested KDS arrays are child settings, never display batches.
   Copying settings/comparing locations stays outside the CLI; no silent identity/alias/IP rewrites.
-  No automatic merge, snapshots, readback, rollback or retry. No other writes.
+  Mandatory pre-change capture preserves previous values; no automatic merge, restoration,
+  readback, rollback or retry. No other writes.
   Workstation responses may contain sensitive nested peripheral settings;
   preserve exact bytes, keep exports private and never paste credentials into reports.
   Explicit scope per reviewed endpoint; no comparison workflow, discovery or related reads.
@@ -37,8 +51,10 @@ Read CONTRIBUTING.md and docs/DEVELOPMENT.md before implementation changes.
 - Locks and atomic persistence/recovery are mandatory. Save failure stops further requests;
   rotated credentials may only survive in recovery copy. Never blindly repeat auth.
 - Three pillars: safe auth/tokens, explicit requests, verbatim data. Future reads use the
-  internal executor and response layer: 16 KiB AND 500 lines inline, otherwise full private
-  export/receipt. Auth secrets never use data export handling.
+  internal executor and response layer: all public reads produce private captures/receipts.
+  Mutation responses are always retained with durable attempt/outcome records; only local
+  record inspection retains 16 KiB/500-line threshold delivery.
+  Auth secrets never use data export handling.
 - No public arbitrary endpoint, test-read, directory override or application environment
   configuration. Test injection is unpackaged and loopback-only.
 - No live account use, data queries, configuration writes, commits, push or publication

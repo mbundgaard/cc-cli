@@ -1,12 +1,13 @@
 import { StateStore } from './state.js';
 import { CliError, Exit } from './output.js';
 import { positiveId, type WriteScope } from './write-scope.js';
-import { executeGuardedWrite, validateWriteControls, object, pointer, writeRisks, type GuardedWriteOptions, type GuardedWriteDefinition } from './guarded-write.js';
+import { mutationOperationById } from './configuration-policy.js';
+import { executeGuardedWrite, guardedDefinition, validateWriteControls, object, pointer, writeRisks, type GuardedWriteOptions, type GuardedWriteDefinition } from './guarded-write.js';
 
 export const kdsWritePaths = {
-  create: '/config/sim/v2/devices/kitchenDisplays',
-  update: '/config/sim/v2/devices/updateKitchenDisplays',
-  delete: '/config/sim/v2/devices/deleteKitchenDisplays',
+  create: mutationOperationById('kds-displays:create:v2').path,
+  update: mutationOperationById('kds-displays:update:v2').path,
+  delete: mutationOperationById('kds-displays:delete:v2').path,
 } as const;
 export type KdsWriteAction = keyof typeof kdsWritePaths;
 export const kdsWriteRisks = [...writeRisks,
@@ -104,8 +105,8 @@ export function validateKdsWrite(action: KdsWriteAction, body: Record<string, un
 }
 export function kdsDefinition(action: KdsWriteAction): GuardedWriteDefinition {
   if (!Object.hasOwn(kdsWritePaths, action)) throw new CliError(Exit.usage, 'Unsupported KDS write action');
-  return {command: `kds-displays ${action}`, action, path: kdsWritePaths[action], readPath: '/config/sim/v2/devices/getKitchenDisplays',
-    scope: 'location', namespace: 'kds-display', risks: kdsWriteRisks, validate: (body, options, scope) => validateKdsWrite(action, body, options, scope)};
+  return guardedDefinition(`kds-displays:${action}:v2`, `kds-displays ${action}`, kdsWriteRisks,
+    (body, options, scope) => validateKdsWrite(action, body, options, scope));
 }
 export function executeKdsWrite(action: KdsWriteAction, store: StateStore, options: GuardedWriteOptions, wait?: (signal: AbortSignal) => Promise<void>): Promise<number> {
   return executeGuardedWrite(kdsDefinition(action), store, options, wait);

@@ -3,7 +3,8 @@
 `cc order-devices update` implements **one explicit v2 object** at
 `POST /config/sim/v2/devices/updateOrderDevices`. It is an offline review by default.
 Only `--execute` can send an update. No batch, v1 fallback, automatic merge, discovery,
-pagination, inheritance calculation, snapshot, readback, rollback or retry is performed.
+pagination, inheritance calculation, restoration, readback, rollback or retry is performed.
+Fresh pre-change evidence is saved and verified before updates.
 This is a CLI guard, not an Oracle permission boundary or protection against other clients.
 Use least-privilege Oracle permissions as an independent safeguard.
 
@@ -63,7 +64,9 @@ Requests are spaced by at least 1.1 seconds between completed preflight calls an
 Prepare displays the exact submitted body, changed top-level fields including their
 nested before/proposed values, top-level fields absent from the payload, and risks.
 It stores only approval metadata/hashes in `order-device-approval.json`: no before-record
-snapshot or request payload. One pending approval is retained, expires after 15 minutes,
+values or request payload inside the approval file. Instead it binds a separate capture manifest,
+original target response, record-history observation and proposed payload. Missing/corrupt evidence
+or failure to save the fresh execution capture blocks dispatch. One pending approval is retained, expires after 15 minutes,
 and is replaced by the next preparation. Execution rechecks the boundary, ownership,
 record content, target, payload and audit reference. Any difference requires preparation
 and review again. Auth token rotation alone does not invalidate the account binding.
@@ -106,10 +109,10 @@ matching fresh preflight cannot prevent another actor changing/deleting a record
 POST. v1 describes update/add behavior and is deliberately not exposed by this command.
 One top-level record does not mean only one underlying database row changes.
 
-No automatic before-snapshot or post-update readback is implemented. HTTP success is not
+Saving before-values is mandatory; post-update readback is not automatic. HTTP success is not
 verified application or proof of the resulting effective configuration. The update response
-is delivered verbatim through the normal inline/private-file boundary; error bodies and
-HTTP exit codes are preserved. Write responses are not learned as read schemas.
+is saved verbatim with a compact file receipt and durable attempt/outcome reference; error
+bodies and HTTP exit codes are preserved. No small-response inline exception exists for mutations. Write responses are not learned as read schemas.
 Live update permission, omission/null behavior and concurrent-change behavior remain
 **unverified**. Synthetic tests do not establish deployment compatibility.
 

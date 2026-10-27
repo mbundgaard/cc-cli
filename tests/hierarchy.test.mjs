@@ -6,7 +6,7 @@ import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { buildReadRequest } from '../dist/read-commands.js';
 import { CatalogueStore, targetFor, compareFields } from '../dist/catalogue.js';
-import { setup, tokens } from './helpers.mjs';
+import { setup, tokens, responseText } from './helpers.mjs';
 const profile = {schemaVersion: 1, product: 'cc', auth: {apiUrl: 'https://cc.example.invalid', orgName: 'Synthetic'}};
 const acknowledgement = {organizationWide: true};
 async function ready(s) {
@@ -67,7 +67,7 @@ test('flags/JSON/file/stdin send one identical page and learn unknown fields wit
     [['--json', JSON.stringify(controls)], ''], [['--file', file], ''], [['--file', '-'], JSON.stringify(controls)],
   ]) {
     const result = await s.run(['hierarchy', 'list', '--organization-wide', '--quiet', ...args], input);
-    assert.equal(result.code, 0, result.stderr); assert.equal(result.stdout, body);
+    assert.equal(result.code, 0, result.stderr); assert.equal(await responseText(result), body);
   }
   assert.equal(requests.length, 4); for (const request of requests) assert.deepEqual(request, {url: '/config/sim/v2/hierarchy/getHierarchy', body: controls});
   const metadata = (await catalogue.view(target)).environment.current.observations['hierarchy:v2'];
@@ -77,7 +77,7 @@ test('flags/JSON/file/stdin send one identical page and learn unknown fields wit
 });
 test('v1 hierarchy and v2 nodes remain separate, and HTTP failure neither retries nor learns', async t => {
   let status = 200;
-  const s = await setup(t, (_, res) => {res.writeHead(status); res.end('{"items":[{"name":{"en-US":"private"}}]}');});
+  const s = await setup(t, (_, res) => {res.writeHead(status); res.end('{"items":[{"hierUnitId":7,"hierStrucId":8,"name":{"en-US":"private"}}]}');});
   const {catalogue, target} = await ready(s);
   assert.equal((await s.run(['hierarchy', 'list', '--api-version', 'v1', '--languages', 'en-US', '--organization-wide', '--quiet'])).code, 0);
   assert.equal((await s.run(['hierarchy', 'nodes', 'list', '--lang-ids', '1', '--organization-wide', '--quiet'])).code, 0);

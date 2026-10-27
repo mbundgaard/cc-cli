@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -26,6 +27,13 @@ export async function setup(t, handler = (_, res) => { res.writeHead(500); res.e
     child.on('error', reject); child.on('close', code => resolve({ code, stdout: Buffer.concat(out).toString(), stderr: Buffer.concat(err).toString() }));
   });
   return { directory, store, url, calls, run };
+}
+// Explicit assertion of the new public file-first read contract, not stdout rewriting.
+export async function responseText(result) {
+  const receipt = JSON.parse(result.stdout);
+  assert.equal(receipt.delivery, 'file');
+  assert.ok(path.isAbsolute(receipt.path));
+  return readFile(receipt.path, 'utf8');
 }
 export async function form(req) {
   const chunks = []; for await (const chunk of req) chunks.push(chunk);

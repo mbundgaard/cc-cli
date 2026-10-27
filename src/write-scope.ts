@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { StateStore, activeState, baseUrl, companyKey, type State } from './state.js';
 import { CliError, Exit } from './output.js';
 import { isRawJson } from './json.js';
+import { type CaptureReference } from './captures.js';
 
 export function canonical(value: unknown): string {
   if (isRawJson(value)) return JSON.stringify(value);
@@ -21,9 +22,15 @@ export interface WriteScope extends WriteIdentity {
   schemaVersion: 1; product: 'cc-write-scope'; revision: string; enabled: boolean;
   locationNumber: number; locationHierarchyUnitId: number; rvcHierarchyUnitIds: number[];
 }
+// Stable on-disk identifiers only: every operation still uses the same locks and lifecycle.
+const approvalStorage = Object.freeze({
+  'order-device': {product: 'cc-order-device-approval', file: 'order-device-approval.json'},
+  'kds-display': {product: 'cc-kds-display-approval', file: 'kds-display-approval.json'},
+} as const);
+export const SHARED_WRITE_LOCK = 'order-device-write.lock'; // Keep old clients on the SAME lock.
 export interface WriteApproval {
   schemaVersion: 1; product: 'cc-order-device-approval' | 'cc-kds-display-approval'; id: string; requestHash: string;
-  expiresAt: number; status: 'prepared' | 'consumed';
+  expiresAt: number; status: 'prepared' | 'consumed'; beforeCapture?: CaptureReference; executionCapture?: CaptureReference; attemptPath?: string;
 }
 export function positiveId(value: unknown, label: string): asserts value is number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) throw new CliError(Exit.usage, `${label} must be a positive safe integer`);
@@ -51,12 +58,13 @@ export class WriteScopeStore {
   readonly file: string; readonly approvalFile: string; readonly lock: string;
   readonly approvalProduct: WriteApproval['product'];
   constructor(readonly directory: string, namespace: 'order-device' | 'kds-display' = 'order-device') {
-    if (!['order-device', 'kds-display'].includes(namespace)) throw new CliError(Exit.state, 'Unsupported approval namespace');
-    this.approvalProduct = namespace === 'order-device' ? 'cc-order-device-approval' : 'cc-kds-display-approval';
+    if (!Object.hasOwn(approvalStorage, namespace)) throw new CliError(Exit.state, 'Unsupported approval namespace');
+    const storage = approvalStorage[namespace];
+    this.approvalProduct = storage.product;
     this.file = path.join(directory, 'write-scope.json');
-    this.approvalFile = path.join(directory, `${namespace}-approval.json`);
+    this.approvalFile = path.join(directory, storage.file);
     // Retain the original shared lock filename for compatibility with existing clients.
-    this.lock = path.join(directory, 'order-device-write.lock');
+    this.lock = path.join(directory, SHARED_WRITE_LOCK);
   }
   async load(): Promise<WriteScope> {
     try { return validateScope(JSON.parse(await readFile(this.file, 'utf8'))); }

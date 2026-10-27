@@ -1,5 +1,5 @@
 import { Command, Option } from 'commander';
-import { baseUrl, type State, StateStore } from './state.js';
+import { baseUrl, companyKey, type State, StateStore } from './state.js';
 import { executeQuery, stringField, type PreparedRequest, type QueryOptions } from './requests.js';
 import { CliError, Exit } from './output.js';
 import { prepareLearning } from './catalogue-commands.js';
@@ -56,7 +56,14 @@ export function buildReadRequest(id: ReadId, state: State, input: Record<string,
   }
   if (!state.auth.apiUrl || !state.auth.orgName) throw new CliError(Exit.notConfigured, 'Configure the CC API URL and enterprise shortname first');
   return { method: 'POST', url: baseUrl(state.auth.apiUrl) + route,
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body, scope: definition.scope };
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body, scope: definition.scope,
+    capture: {company: state.auth.authUrl ? companyKey(state.auth) : '', apiUrl: baseUrl(state.auth.apiUrl), task: id, apiVersion,
+      scopeKind: definition.scopeMode === 'none' ? 'environment' : definition.scopeMode === 'acknowledgement' ? 'organization' :
+        definition.scope === 'location' ? 'location' : definition.scope === 'revenue-center' ? 'rvc' : 'hierarchy-unit',
+      scopeId: definition.scopeMode === 'none' || definition.scopeMode === 'acknowledgement' ? 'all' :
+        String(definition.scopeMode === 'body' ? JSON.parse(JSON.stringify(body.hierUnitId)) : options.hierUnitId),
+      detail: body.includeAll === 'detailed' ? 'detailed' : !body.includeAll && body.include ? 'projection' : 'default',
+      ...(!body.includeAll && body.include ? {projection: body.include as string} : {}), purpose: 'read'}};
 }
 export function readOptions(command: Command): Command {
   return command.addOption(new Option('--api-version <version>', 'Explicit contract; no automatic fallback').choices(['v1', 'v2']).default('v2'))
@@ -80,7 +87,7 @@ export function recordOptions(command: Command): Command {
     .option('--limit <count>', 'Positive safe integer; one page only, no default injected', numericFlag)
     .option('--offset <index>', 'Nonnegative safe integer; never advanced automatically', numericFlag)
     .option('--order-by <expression>', 'Server-side ordering, e.g. objectNum:asc; no client sorting or default')
-    .addHelpText('after', '\nRead-only POST; run server-version explicitly first to establish the local catalogue.\nExactly one page/request; no automatic pagination, fallback, retries or hierarchy traversal.\nRecord fields are not allowlisted. Request controls and scope are reviewed per task.\nincludeAll overrides include in Oracle. Filter semantics and server page limits remain Oracle-defined.\n');
+    .addHelpText('after', '\nRead-only POST; responses are saved privately and stdout contains a file receipt.\nEvery supported task uses mandatory record-history capture.\nMissing/ambiguous identity fields or indexing failure retain raw evidence but fail the read capture.\nRun server-version explicitly first to establish the local catalogue.\nExactly one page/request; no automatic pagination, fallback, retries or hierarchy traversal.\nRecord fields are not allowlisted. Request controls and scope are reviewed per task.\nincludeAll overrides include in Oracle. Filter semantics and server page limits remain Oracle-defined.\n');
 }
 export async function executeRead(id: ReadId, store: StateStore, options: ReadOptions): Promise<number> {
   return executeQuery(id, store, options, (state, input) => buildReadRequest(id, state, input, options), store.directory, undefined,

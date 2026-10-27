@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CatalogueStore, compareFields, documentedFields, importSpecification, observeFields, releaseVersions, targetFor } from '../dist/catalogue.js';
 import { readDefinitions } from '../dist/read-commands.js';
-import { setup, tokens } from './helpers.mjs';
+import { setup, tokens, responseText } from './helpers.mjs';
 const inline = value => ({kind: 'inline', body: Buffer.from(value)});
 const target = {company: 'Synthetic@idm.example.invalid', apiUrl: 'https://cc.example.invalid', accountHash: 'synthetic'};
 const versions = {enterprise: '19.9.synthetic', api: '23.synthetic'};
@@ -100,11 +100,11 @@ test('explicit version read learns metadata; HTTP errors do not; catalogue lock 
   const s = await setup(t, (_, res) => {res.writeHead(status); res.end(body);});
   await s.store.mutate(async state => {state.tokens = tokens();});
   const catalogue = new CatalogueStore(s.directory);
-  let r = await s.run(['server-version', '--quiet']); assert.equal(r.code, 0, r.stderr); assert.equal(r.stdout, body);
+  let r = await s.run(['server-version', '--quiet']); assert.equal(r.code, 0, r.stderr); assert.equal(await responseText(r), body);
   const before = await readFile(catalogue.file, 'utf8'); assert.doesNotMatch(before, /DO-NOT-SAVE|synthetic-id|synthetic-refresh/);
   status = 400; r = await s.run(['server-version', '--quiet']); assert.equal(r.code, 11); assert.equal(await readFile(catalogue.file, 'utf8'), before);
   status = 200; await writeFile(catalogue.file + '.lock', 'synthetic');
-  r = await s.run(['server-version', '--quiet']); assert.equal(r.code, 0); assert.equal(r.stdout, body); assert.match(r.stderr, /Metadata was not saved/);
+  r = await s.run(['server-version', '--quiet']); assert.equal(r.code, 0); assert.equal(await responseText(r), body); assert.match(r.stderr, /Metadata was not saved/);
   assert.equal(await readFile(catalogue.file, 'utf8'), before); assert.equal(s.calls.length, 3);
 });
 test('local catalogue commands stay offline and compare imported schemas with observed structures', async t => {

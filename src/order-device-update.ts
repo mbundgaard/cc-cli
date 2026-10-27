@@ -1,9 +1,10 @@
 import { StateStore } from './state.js';
 import { CliError, Exit } from './output.js';
 import { type WriteScope } from './write-scope.js';
-import { executeGuardedWrite, validateWriteControls, writeRisks, object, pointer, type GuardedWriteOptions, type GuardedWriteDefinition } from './guarded-write.js';
+import { executeGuardedWrite, guardedDefinition, validateWriteControls, writeRisks, object, pointer, type GuardedWriteOptions } from './guarded-write.js';
+import { mutationOperationById } from './configuration-policy.js';
 
-export const orderDeviceUpdatePath = '/config/sim/v2/devices/updateOrderDevices';
+export const orderDeviceUpdatePath = mutationOperationById('order-devices:update:v2').path;
 export const updateRisks = writeRisks;
 export type OrderDeviceUpdateOptions = GuardedWriteOptions;
 // Reviewed v2 types classify warnings, NOT an executable route or record-column allowlist.
@@ -53,8 +54,7 @@ export function validateUpdate(body: Record<string, unknown>, options: OrderDevi
   if (unverified.length && !options.allowUnverifiedFields) throw new CliError(Exit.usage, 'Unverified fields/nulls require explicit --allow-unverified-fields; documentation is not proof of writability');
   return [...new Set(unverified)].sort();
 }
-const definition: GuardedWriteDefinition = {command: 'order-devices update', action: 'update', path: orderDeviceUpdatePath,
-  readPath: '/config/sim/v2/devices/getOrderDevices', scope: 'rvc', namespace: 'order-device', risks: updateRisks, validate: validateUpdate};
+const definition = guardedDefinition('order-devices:update:v2', 'order-devices update', updateRisks, validateUpdate);
 export function executeOrderDeviceUpdate(store: StateStore, options: OrderDeviceUpdateOptions, wait?: (signal: AbortSignal) => Promise<void>): Promise<number> {
   return executeGuardedWrite(definition, store, options, wait);
 }

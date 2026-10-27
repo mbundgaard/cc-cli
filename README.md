@@ -18,9 +18,19 @@ projection and explicit paging are documented in [Read controls](docs/READS.md).
 location/RVC boundary, read-only preparation, one-use approval and explicit risk acknowledgement.
 [KDS display CRUD](docs/KDS-CRUD.md) adds guarded single-display create/update/delete
 alongside list reads. Names/IPs remain as authored; internal IDs never transfer between locations.
-No automatic copy workflow, merge, snapshot, readback or retry. Other writes are absent.
+Previous values are captured before supported updates/deletes. No automatic copy workflow,
+merge, restore, readback or retry. Other writes are absent.
 Authorized logins, version/hierarchy, KDS-display and order-device reads succeeded. Live
 updates, refresh and other task permissions remain unverified; permissions are endpoint-specific.
+
+## Safety and saved record history
+
+Read the [user safety guide](docs/SAFETY-AND-RECORD-HISTORY.md) for read-only defaults,
+write approval, privacy and the mandatory one-file-per-record history workflow. All public
+configuration reads save files and return receipts; supported updates/deletes require fresh
+saved pre-change evidence. The status matrix distinguishes implemented controls from remaining work.
+
+Contributors must follow the [implementation contract](docs/READ-ONLY-RECORD-HISTORY-DESIGN.md).
 
 ## Development
 
@@ -81,14 +91,17 @@ credentials. Status shows local presence/expiry, not Oracle permission validatio
 
 - Local/help/status commands stay offline; login/refresh are explicit network actions.
 - `version --check` explicitly checks npm; never installs or sends Oracle credentials.
-- Data response delivery: at most 16 KiB
-  AND 500 lines inline; larger complete bodies become private files with compact receipts.
+- Every public configuration read saves the complete response and record history, returning
+  a compact receipt. Missing identities or indexing failure fail the capture; no per-task bypass.
+  Mutation responses are also file-first and linked to durable attempt/outcome records.
+  Only local inspection retains the 16 KiB/500-line inline threshold.
   Authentication responses never pass through data export handling.
 - Requests pin company identity and validate/read input before renewal.
 - No arbitrary endpoint command, automatic discovery, bulk writes, release or publication.
 - Writes stay offline by default; --prepare checks ownership/existence without writing.
   --execute consumes approval before one v2 order-device update or KDS create/update/delete.
-  Deletes require an additional target confirmation. No snapshots/readback are automatic.
+  Deletes require an additional target confirmation. Pre-change capture is mandatory;
+  no automatic restoration or post-write readback.
 - `cc server-version [--api-version v1|v2] [--dry-run] [--quiet]` sends one explicit read;
   no fallback. Dry-run is offline. `cc version` still means the installed CLI version.
 - Explicit version reads establish a local catalogue generation. Release changes archive

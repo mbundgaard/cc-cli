@@ -21,7 +21,7 @@ function npmRun(args) {
 }
 try {
   const [packed] = JSON.parse(npmRun(['pack', '--ignore-scripts', '--json', '--pack-destination', temp]));
-  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md', 'docs/READS.md', 'docs/KDS-DISPLAYS.md', 'docs/ORDER-DEVICES.md', 'docs/WORKSTATIONS.md', 'docs/ORDER-TYPES.md', 'docs/ORDER-DEVICE-UPDATES.md', 'docs/KDS-CRUD.md']);
+  const allow = new Set(['package.json', 'bin/cc.js', 'README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/CLI.md', 'docs/AUTHENTICATION.md', 'docs/DEVELOPMENT.md', 'docs/RESPONSES.md', 'docs/CATALOGUE.md', 'docs/HIERARCHY.md', 'docs/MENU-ITEM-MASTERS.md', 'docs/READS.md', 'docs/KDS-DISPLAYS.md', 'docs/ORDER-DEVICES.md', 'docs/WORKSTATIONS.md', 'docs/ORDER-TYPES.md', 'docs/ORDER-DEVICE-UPDATES.md', 'docs/KDS-CRUD.md', 'docs/READ-ONLY-RECORD-HISTORY-DESIGN.md', 'docs/SAFETY-AND-RECORD-HISTORY.md', 'docs/RECORDS.md', 'docs/SHARED-ENGINE-AUDIT.md']);
   for (const f of packed.files) assert.ok(allow.has(f.path) || /^dist\/[a-z-]+\.(?:js|d\.ts)$/.test(f.path), `Unexpected package file: ${f.path}`);
   npmRun(['install', '--prefix', temp, '--ignore-scripts', '--no-audit', '--no-fund', path.join(temp, packed.filename)]);
   const shim = path.join(temp, 'node_modules', '.bin', process.platform === 'win32' ? 'cc.cmd' : 'cc');
@@ -35,6 +35,19 @@ try {
   const endpoints = run(['endpoints']); assert.equal(endpoints.status, 0); assert.deepEqual(JSON.parse(endpoints.stdout).data.dataEndpoints.map(item => item.id), ['server-version', 'hierarchy', 'hierarchy-nodes', 'menu-item-masters', ...addedTasks.map(task => task.id)]);
   for (const name of ['test-read', 'getHierarchy', 'pos-dimensions']) { const r = run([name]); assert.equal(r.status, 6); assert.equal(r.stdout, ''); }
   const module = name => pathToFileURL(path.join(temp, 'node_modules/@muneris/cc-cli/dist', name)).href;
+  for (const name of ['list', 'show', 'history', 'diff']) assert.equal(run(['records', name, '--help']).status, 0);
+  const historySmoke = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    import {randomUUID} from 'node:crypto';
+    import {RecordHistoryStore} from ${JSON.stringify(module('record-history.js'))};
+    import {StateStore} from ${JSON.stringify(module('state.js'))};
+    import {main} from ${JSON.stringify(module('cli.js'))};
+    const directory = ${JSON.stringify(path.join(temp, 'history-state'))};
+    const identity = {company:'SYNTHETIC@idm.invalid',apiUrl:'https://api.invalid',task:'order-devices',scopeKind:'rvc',scopeId:'71',recordId:'3'};
+    await new RecordHistoryStore(directory).append(identity, {captureId:randomUUID(),capturedAt:new Date().toISOString(),operationId:'order-devices:v2',responseSha256:'a'.repeat(64),detail:'detailed',purpose:'read'}, {objectNum:3,synthetic:true});
+    process.exitCode = await main(['node','cc','records','show','--company',identity.company,'--api-url',identity.apiUrl,'--task',identity.task,'--scope-kind',identity.scopeKind,'--scope-id',identity.scopeId,'--record-id',identity.recordId], new StateStore(directory));
+  `], {encoding: 'utf8'});
+  assert.equal(historySmoke.status, 0, historySmoke.stderr);
+  assert.equal(JSON.parse(historySmoke.stdout).data.observation.record.synthetic, true);
   // Installed modules with isolated state and loopback IDM only; never real user credentials.
   const flow = spawnSync(process.execPath, ['--input-type=module', '-e', `
     import assert from 'node:assert/strict';
@@ -52,7 +65,7 @@ try {
         assert.equal(req.headers.authorization,'Bearer synthetic-id-token');
         const chunks=[];for await(const chunk of req)chunks.push(chunk);
         const body=JSON.parse(Buffer.concat(chunks).toString());
-        const respond=items=>res.end(JSON.stringify({items,count:items.length,totalResults:items.length,hasMore:false}));
+        const respond=items=>res.end(JSON.stringify({items:items.map((item,index)=>item.nodeType?{...item,hierStrucId:item.hierUnitId*100+index+1}:item),count:items.length,totalResults:items.length,hasMore:false}));
         if(req.url==='/config/sim/v2/hierarchy/getHierarchyNodes') {
           respond(body.searchCriteria.includes('(hierUnitId,70)')?[{hierUnitId:70,objectNum:901,nodeType:'Location'}]:[{hierUnitId:71,parentHierUnitId:70,nodeType:'RVC'}]);return;
         }
@@ -73,7 +86,7 @@ try {
         assert.equal(req.headers.authorization, 'Bearer synthetic-id-token');
         const chunks=[]; for await(const chunk of req) chunks.push(chunk);
         assert.deepEqual(JSON.parse(Buffer.concat(chunks).toString()), task.body);
-        res.end(JSON.stringify({items:[{undocumentedField:true}],hasMore:true})); return;
+        res.end(JSON.stringify({items:[{hierUnitId:7,objectNum:1,lineNum:1,undocumentedField:true}],hasMore:true})); return;
       }
       if (req.url === '/config/sim/v2/getReleaseVersions') {
         assert.equal(req.headers.authorization, 'Bearer synthetic-id-token');
@@ -81,7 +94,7 @@ try {
       }
       if (['/config/sim/v2/hierarchy/getHierarchy','/config/sim/v2/hierarchy/getHierarchyNodes','/config/sim/v2/menuItems/getMenuItemMasters'].includes(req.url)) {
         assert.equal(req.headers.authorization, 'Bearer synthetic-id-token');
-        res.end(JSON.stringify({items:[{hierUnitId:7,undocumentedField:true}],hasMore:true})); return;
+        res.end(JSON.stringify({items:[{hierUnitId:7,objectNum:1,hierStrucId:8,undocumentedField:true}],hasMore:true})); return;
       }
       if (req.url.includes('/authorize?')) {
         const url = new URL(req.url,'http://localhost');
@@ -148,5 +161,5 @@ try {
   `], {encoding: 'utf8', timeout: 60000});
   assert.equal(flow.status, 0, flow.stderr);
   assert.doesNotMatch(flow.stdout + flow.stderr, /synthetic-password|synthetic-id-token|synthetic-refresh-token/);
-  console.log(`${packed.filename}: ${packed.files.length} allowlisted files; installed shim/help/parser, reviewed read inventory, installed reviewed reads/catalogue, guarded order-device updates/KDS CRUD prepare/execute and isolated PKCE/login/duplicate/refresh/logout verified. No live Oracle calls.`);
+  console.log(`${packed.filename}: ${packed.files.length} allowlisted files; installed shim/help/parser, reviewed read inventory, installed reviewed reads/catalogue/local record history, guarded order-device updates/KDS CRUD prepare/execute and isolated PKCE/login/duplicate/refresh/logout verified. No live Oracle calls.`);
 } finally { rmSync(temp, {recursive: true, force: true}); }

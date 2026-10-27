@@ -7,6 +7,7 @@ import { checkForUpdates } from './updates.js';
 import { registerReads, readDefinitions } from './read-commands.js';
 import { registerCatalogue } from './catalogue-commands.js';
 import { registerWrites, writeDefinitions } from './write-commands.js';
+import { registerRecords } from './record-commands.js';
 import { CliError, Exit, localResult, reportError } from './output.js';
 const version = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
 function network(command: Command): Command {
@@ -24,11 +25,12 @@ function nonblank(value: string, flag: string): string {
 export function createProgram(store = new StateStore(), setExit: (code: number) => void = code => { process.exitCode = code; }, checkVersion = checkForUpdates): Command {
   const root = new Command('cc').description('Oracle Simphony Configuration and Content CLI. Explicit reads and guarded single-record device writes.')
     .version(version).exitOverride().configureOutput({ writeErr: () => {} });
-  root.addHelpText('after', '\nStart: cc auth status; reuse saved tokens or explicitly refresh.\nSetup: cc auth config --help, then cc auth login --help.\nRequires a Simphony Configuration API account. Uses id_token, not access_token.\nState is isolated in CcCli; never imports BI/STS tokens or untagged profiles.\nNo application environment-variable configuration, directory override, TLS bypass or retries.\nHardcoded calls; extensible record fields. No arbitrary endpoints. Order-device updates and KDS display CRUD writes require a location boundary and one-use approval.\nLocal/help commands stay offline. Support: support@muneris.dk.\n');
+  root.addHelpText('after', '\nStart: cc auth status; reuse saved tokens or explicitly refresh.\nSetup: cc auth config --help, then cc auth login --help.\nRequires a Simphony Configuration API account. Uses id_token, not access_token.\nState is isolated in CcCli; never imports BI/STS tokens or untagged profiles.\nNo application environment-variable configuration, directory override, TLS bypass or retries.\nHardcoded calls; extensible record fields. No arbitrary endpoints. Configuration dispatch defaults to reviewed reads; unknown routes and unapproved mutations are blocked. Order-device updates and KDS display CRUD writes require a location boundary and one-use approval.\nLocal/help commands stay offline. Support: support@muneris.dk.\n');
   root.action(() => { root.outputHelp(); });
   registerCompanies(root, store);
   registerReads(root, store, setExit);
   registerWrites(root, store, setExit);
+  registerRecords(root, store);
   registerCatalogue(root, store, readDefinitions);
   root.command('version').description('[read-only] Installed version; --check explicitly queries npm')
     .option('--check', 'Explicit five-second npm lookup; never installs')

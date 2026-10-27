@@ -8,7 +8,7 @@ import { validateCompanies, validateState, emptyState, emptyCompanies, stateDire
 import { setup, tokens, clientId } from './helpers.mjs';
 test('production exposes reviewed reads and guarded writes, never synthetic or BI commands', () => {
   const root = createProgram();
-  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'kds-displays', 'menu-item-masters', 'order-devices', 'order-types', 'server-version', 'version', 'workstations', 'write-scope']);
+  assert.deepEqual(root.commands.map(c => c.name()).sort(), ['auth', 'catalogue', 'company', 'endpoints', 'hierarchy', 'kds-displays', 'menu-item-masters', 'order-devices', 'order-types', 'records', 'server-version', 'version', 'workstations', 'write-scope']);
   for (const args of [['--help'], ['auth', 'login', '--help'], ['company', '--help'], ['endpoints'], ['version']]) {
     const r = spawnSync(process.execPath, ['bin/cc.js', ...args], {encoding: 'utf8'});
     assert.equal(r.status, 0, r.stderr);

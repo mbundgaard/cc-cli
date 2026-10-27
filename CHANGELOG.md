@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Consolidate public reads, ownership checks, target reads and mutations into one configuration
+  exchange lifecycle. Capture metadata is mandatory; no per-topic enablement or inline network
+  bypass. Catalogue roles and mutation/read links come from compiled capability metadata.
+- Journal mutation intent before approval consumption, then dispatch and HTTP/uncertain outcomes.
+  Retain every mutation response privately, including small bodies. Preserve the shared legacy
+  lock filename through explicit compatibility metadata; no split-lock migration.
+
+- Add a shared read-only-by-default configuration request policy with fixed reviewed
+  methods/routes/effects. Unknown routes and unapproved writes fail closed; existing
+  guarded writes receive short-lived, exact-request-bound, single-use internal permits
+  only after approval consumption. Auth transport remains separate from this policy.
+- Document the generic-engine/fixed-capability record-history design. All supported public
+  reads now use mandatory file-first capture/history; there is no per-topic opt-in or successful
+  raw-only fallback. Missing identities and indexing/storage failures fail closed.
+- Add private, lossless one-file-per-record history storage and offline records list/show/
+  history/diff commands. Preserve prior observations, distinguish null/absent values, reject
+  corrupt/linked storage, and fail on lock contention or growth above 64 MiB without pruning.
+  Add mandatory saved/verified target and proposed-payload evidence at write prepare/execute;
+  bind approvals to evidence and reject damaged/missing captures before mutation dispatch.
+  Indexing is currently bounded to 32 MiB per response. Add user-facing safety/history docs.
+
 - Align the independently implemented STS/BI/CC authentication safety contract.
   Tighten callback port/fragment and credential validation, sanitize cookie-jar errors,
   and report expiring-soon consistently. Add matching synthetic regression scenarios.

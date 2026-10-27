@@ -1,14 +1,17 @@
 import {test} from 'node:test';
+import fs from 'node:fs/promises';
+import {syncBuiltinESMExports} from 'node:module';
 import assert from 'node:assert/strict';
-import {readFile, writeFile, readdir} from 'node:fs/promises';
+import {readFile, writeFile, readdir, unlink} from 'node:fs/promises';
+import {RecordHistoryStore} from '../dist/record-history.js';
 import path from 'node:path';
-import {setup, tokens} from './helpers.mjs';
+import {setup, tokens, responseText} from './helpers.mjs';
 import {WriteScopeStore} from '../dist/write-scope.js';
 import {executeOrderDeviceUpdate} from '../dist/order-device-update.js';
 
 const body = {hierUnitId: 71, objectNum: 3, deviceType: 1, menuItemPrinting: 1, condimentSortType: 1, name: {'1': 'New synthetic name'}, kdsSettings: {beepOnNewOrder: 0}};
 const options = extra => ({hierUnitId: 71, objectNum: 3, json: JSON.stringify(body), quiet: true, ...extra});
-const list = items => ({items, count: items.length, totalResults: items.length, hasMore: false, offset: 0});
+const list = items => ({items: items.map((item, index) => item.nodeType ? {...item, hierStrucId: item.hierUnitId * 100 + index + 1} : item), count: items.length, totalResults: items.length, hasMore: false, offset: 0});
 async function capture(action) {
   const output = [], original = process.stdout.write;
   process.stdout.write = function(chunk, encoding, callback) { output.push(Buffer.from(chunk)); if(typeof encoding === 'function') encoding(); else callback?.(); return true; };
@@ -63,13 +66,13 @@ for(const [name, extra] of [
 ]) test(`update fails offline: ${name}`, async t => {
   const s=await fixture(t); await assert.rejects(s.invoke(extra)); assert.equal(s.calls.length,0);
 });
-test('prepare verifies duplicate placements, shows submitted changes/omissions and stores hashes only; execute sends one exact object', async t => {
+test('prepare verifies duplicate placements and links saved evidence without values in approval; execute sends one exact object', async t => {
   const s=await fixture(t), plan=await s.prepare();
   assert.equal(plan.updateSent,false); assert.equal(plan.ownershipVerified,true); assert.ok(plan.changes.some(item=>item.field==='name'));
   assert.ok(plan.absentFromSubmittedPayload.includes('untouched')); assert.equal(s.requests.length,3);
   const approval=await readFile(s.scopes.approvalFile,'utf8'); assert.doesNotMatch(approval,/SYNTHETIC-RECORD-VALUE|Old synthetic name|New synthetic name|synthetic-id/);
   const result=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true});
-  assert.equal(result.value,0); assert.equal(result.stdout,'{"hierUnitId":71,"objectNum":3}'); assert.equal(s.requests.length,7);
+  assert.equal(result.value,0); assert.equal(await responseText(result),'{"hierUnitId":71,"objectNum":3}'); assert.equal(s.requests.length,7);
   const update=s.requests.at(-1); assert.equal(update.url,'/config/sim/v2/devices/updateOrderDevices'); assert.deepEqual(update.body,body);
   assert.equal(update.headers['simphony-audittrailref'],'Muneris CC-CLI // Synthetic_User');
   assert.equal(s.requests.filter(r=>r.url.endsWith('updateOrderDevices')).length,1);
@@ -77,6 +80,93 @@ test('prepare verifies duplicate placements, shows submitted changes/omissions a
   await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}),/consumed/); assert.equal(s.requests.length,7);
   assert.ok(!(await readdir(s.directory)).some(name=>/snapshot|backup|response-/.test(name)));
 });
+test('prepare and execute retain separate pre-change observations, proposal and consumed evidence links', async t => {
+  const s=await fixture(t), plan=await s.prepare();
+  const prepared=JSON.parse(await readFile(plan.beforeCapture.manifestPath,'utf8'));
+  assert.equal(prepared.status,'complete');assert.equal(prepared.entries.length,1);
+  assert.deepEqual(JSON.parse(await readFile(path.join(path.dirname(plan.beforeCapture.manifestPath),'proposed.json'),'utf8')),body);
+  await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true});
+  const approval=await s.scopes.approval();assert.equal(approval.status,'consumed');
+  assert.notEqual(approval.executionCapture.captureId,approval.beforeCapture.captureId);
+  const history=await new RecordHistoryStore(s.directory).load(prepared.entries[0].identity);
+  assert.equal(history.observations.length,2);
+  assert.ok(history.observations.every(item=>item.record.name['1']==='Old synthetic name'));
+});
+
+test('small mutation responses are retained with durable HTTP outcome and no credentials', async t => {
+  const s=await fixture(t),plan=await s.prepare();
+  const result=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true});
+  const receipt=JSON.parse(result.stdout),text=await readFile(receipt.attemptPath,'utf8'),attempt=JSON.parse(text);
+  assert.equal(attempt.status,'http-response');assert.equal(attempt.httpStatus,200);
+  assert.equal(attempt.responsePath,receipt.path);assert.equal(attempt.responseSha256,receipt.sha256);
+  assert.equal(attempt.savedStateVerified,false);assert.doesNotMatch(text,/Bearer|synthetic-id|synthetic-refresh|Authorization/);
+  assert.equal((await s.scopes.approval()).attemptPath,receipt.attemptPath);
+  const folders=await readdir(path.join(s.directory,'responses'));
+  const manifests=await Promise.all(folders.map(folder=>readFile(path.join(s.directory,'responses',folder,'manifest.json'),'utf8').then(JSON.parse).catch(()=>null)));
+  assert.equal(manifests.filter(m=>m?.context?.purpose==='ownership').length,4);
+});
+
+test('durable attempt preparation failure blocks mutation before approval consumption', async t => {
+  const s=await fixture(t),plan=await s.prepare();
+  await writeFile(path.join(s.directory,'write-attempts'),'not-a-directory');
+  await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}));
+  assert.ok(s.requests.every(r=>!r.url.endsWith('updateOrderDevices')));
+  assert.equal((await s.scopes.approval()).status,'prepared');
+});
+
+for (const failAt of [2,3]) test(`mutation journal persistence failure at stage ${failAt} never triggers a retry`, async t => {
+  const s=await fixture(t),plan=await s.prepare(),original=fs.rename;
+  let journalSaves=0;
+  try {
+    fs.rename=async(from,to)=>{
+      if(String(to).includes('write-attempts')&&String(to).endsWith('manifest.json')){
+        journalSaves++;if(journalSaves===failAt)throw new Error('Synthetic journal storage failure');
+      }
+      return original(from,to);
+    };syncBuiltinESMExports();
+    await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}),/uncertain/);
+  }finally{fs.rename=original;syncBuiltinESMExports();}
+  const approval=await s.scopes.approval();assert.equal(approval.status,'consumed');
+  assert.equal(s.requests.filter(r=>r.url.endsWith('updateOrderDevices')).length,failAt===2?0:1);
+  const attempt=JSON.parse(await readFile(approval.attemptPath,'utf8'));
+  assert.equal(attempt.status,failAt===2?'prepared':'uncertain');
+  if(failAt===3)assert.equal(await readFile(attempt.responsePath,'utf8'),'{"hierUnitId":71,"objectNum":3}');
+});
+
+test('lost mutation response retains an uncertain journal and consumed approval without retry', async t => {
+  const s=await fixture(t,{respond:async(request,res)=>{
+    if(request.url.endsWith('updateOrderDevices')){res.destroy();return true;}
+    return false;
+  }}),plan=await s.prepare();
+  await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}),/uncertain/);
+  const approval=await s.scopes.approval();assert.equal(approval.status,'consumed');
+  const attempt=JSON.parse(await readFile(approval.attemptPath,'utf8'));assert.equal(attempt.status,'uncertain');
+  assert.equal(s.requests.filter(r=>r.url.endsWith('updateOrderDevices')).length,1);
+});
+
+test('failed pre-change history save blocks preparation and sends no mutation', async t => {
+  const s=await fixture(t);await writeFile(path.join(s.directory,'records'),'not-a-directory');
+  await assert.rejects(s.prepare());
+  assert.equal(s.requests.length,1);assert.ok(s.requests.every(r=>!r.url.endsWith('updateOrderDevices')));
+  await assert.rejects(s.scopes.approval());
+});
+
+test('removed baseline evidence blocks execution before any new network request', async t => {
+  const s=await fixture(t),plan=await s.prepare();
+  await unlink(path.join(path.dirname(plan.beforeCapture.manifestPath),'response.body'));
+  await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}),/evidence/);
+  assert.equal(s.requests.length,3);assert.equal((await s.scopes.approval()).status,'prepared');
+});
+
+test('failure saving the fresh execution observation blocks dispatch and approval consumption', async t => {
+  const s=await fixture(t),plan=await s.prepare();
+  const manifest=JSON.parse(await readFile(plan.beforeCapture.manifestPath,'utf8'));
+  await writeFile(manifest.entries[0].path+'.lock','');
+  await assert.rejects(s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true}));
+  assert.equal(s.requests.length,6);assert.ok(s.requests.every(r=>!r.url.endsWith('updateOrderDevices')));
+  assert.equal((await s.scopes.approval()).status,'prepared');
+});
+
 test('explicit unverified non-identity fields preserve values and exact large numbers; no merge', async t => {
   const s=await fixture(t);
   const json=JSON.stringify(body).slice(0,-1)+',"futureValue":9007199254740993,"futureObject":{"futureBit":true},"customInstructions":null}';
@@ -128,7 +218,7 @@ test('HTTP error bytes remain unchanged and approval stays consumed',async t=>{
   const response='{"status":400,"detail":"Synthetic validation error"}';
   const s=await fixture(t,{respond:async(req,res)=>{if(req.url.endsWith('updateOrderDevices')){res.writeHead(400);res.end(response);return true;}}});
   const plan=await s.prepare(),r=await s.invoke({execute:true,approve:plan.approval,ackUpdateRisks:true});
-  assert.equal(r.value,11);assert.equal(r.stdout,response);assert.equal(s.requests.length,7);
+  assert.equal(r.value,11);assert.equal(await responseText(r),response);assert.equal(s.requests.length,7);
 });
 test('large update response keeps complete private-file delivery',async t=>{
   const response=JSON.stringify({value:'x'.repeat(18000),unknownField:true});

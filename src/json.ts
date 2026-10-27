@@ -1,5 +1,6 @@
-// Node 22+ supports reviver source text and raw JSON values. Only request JSON
-// uses this parser; CC response bytes must never pass through it.
+// Node 22+ supports reviver source text and raw JSON values. Request JSON and
+// derived record-history files use this parser. Original response bytes remain
+// unchanged; parsing a derived representation never replaces source evidence.
 const sourceJSON = JSON as unknown as {
   parse(text: string, reviver: (key: string, value: unknown, context?: { source?: string }) => unknown): unknown;
   rawJSON(text: string): object;

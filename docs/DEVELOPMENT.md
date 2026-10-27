@@ -23,10 +23,24 @@ without runtime dependencies on sibling repositories. No changes to BI or STS.
 - src/kds-display-writes.ts: reviewed location-scoped v2 create/update/delete definitions,
   target identity rules and nested child-array validation. No source-copy workflow.
 - src/write-commands.ts: offline boundary configuration and explicit prepare/execute commands.
+- src/configuration-policy.ts: immutable reviewed route/method/effect catalogue and generic
+  read-only dispatcher; guarded-write alone issues exact-request-bound single-use mutation
+  permits after durable approval consumption. All configuration delivery/proofs use this seam.
 - src/transport.ts: HTTPS/TLS, bounded requests, no redirects/retries; loopback for tests.
 - src/requests.ts: internal one-input-read/pinned-company execution seam, no API paths.
-- src/responses.ts: internal byte-exact bounded delivery, never used for token responses.
-- src/json.ts: exact input numbers; not a response decoder.
+- src/responses.ts: network-free byte collector and delivery types; local inspection may use
+  threshold output. Production configuration networking always uses file-first collection.
+- src/configuration-exchange.ts: the single request/capture/persistence lifecycle for public,
+  ownership and target reads, and mutations. Read context or permit/attempt is mandatory.
+- src/mutation-journal.ts: durable prepared/dispatching/HTTP/uncertain attempt metadata; no secrets.
+- src/json.ts: lossless request and derived history JSON; never rewrites original response bytes.
+- src/private-files.ts: shared Windows/POSIX private directories and generated-path checks.
+- src/record-history.ts: one file per identity, lossless observations, validated provenance,
+  locking and atomic replacement; bounded growth without pruning. Internal ingestion only.
+- src/record-commands.ts: offline list/show/history/diff; no auth/state mutation or Oracle calls.
+- src/record-definitions.ts: mandatory reviewed record identity/structure metadata for every task.
+- src/captures.ts: generic source capture, manifest/indexing and pre-write evidence verification.
+  No topic enablement switches or successful raw-only fallback. Source reads remain unmodified.
 - src/catalogue.ts: bounded streaming structural observation and locked versioned metadata.
 - src/catalogue-commands.ts: explicit local Swagger import/comparison and post-delivery learning.
   Uses stream-json tokens without assembling values. JSON observation never rewrites output.
@@ -38,9 +52,9 @@ not be silently accepted by a new product. Restore never reads sibling state dir
 
 Tests are synthetic loopback only, use isolated stores and never contact Oracle. Adapted
 BI auth/company tests cover cookie/client-ID preservation, safe failures, rotation,
-expiry, concurrency, lock/recovery, staged config and duplicate avoidance. Internal
-protected-read behavior is exercised through unpackaged tests/test-read.mjs; this fake
-route is loopback-only, not a real CC endpoint or production CLI escape hatch.
+expiry, concurrency, lock/recovery, staged config and duplicate avoidance. Unpackaged tests/test-read.mjs exercises auth preflight plus the network-free collector with
+loopback byte fixtures; it is not a production read mode. Real named-command tests exercise
+mandatory capture. The fixture does not inject an optional output/capture bypass into production.
 
 Package tests install a temporary archive and invoke its real shim. Stateful checks use
 installed modules with isolated stores and mock authentication. No real saved credentials,
@@ -49,6 +63,11 @@ The package is private/unpublished. CI is configured for Linux/macOS/Windows and
 configuration alone does not establish remote CI execution. No publish workflow.
 
 ## Next stages
+
+See [read-only and record-history design](READ-ONLY-RECORD-HISTORY-DESIGN.md).
+The central configuration policy, record-history storage and local inspection are implemented;
+network capture ingestion, file-first public reads and mandatory saved before-values are implemented.
+Approval metadata links verified capture evidence; it is not itself the record history.
 
 Review individual CC endpoint contracts/version support before implementing data commands.
 The guide includes v1/v2, hierarchy scopes, translated strings, options and explicit
@@ -61,7 +80,7 @@ Single-record v2 order-device updates are implemented with offline review by def
 explicit read-only preparation and one-use approved execution inside a local boundary.
 [KDS display CRUD](KDS-CRUD.md) shares this lifecycle with presence/absence checks and
 additional destructive confirmation. See [update safety](ORDER-DEVICE-UPDATES.md).
-No automatic snapshot/readback/merge/retry.
+Pre-change capture is mandatory; no automatic restore/readback/merge/retry.
 Never infer write permission or omission/null/concurrency semantics from successful reads.
 
 Authorized logins and version reads also succeeded. Live updates, refresh and other

@@ -5,7 +5,7 @@ import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {buildReadRequest} from '../dist/read-commands.js';
 import {CatalogueStore, targetFor} from '../dist/catalogue.js';
-import {setup, tokens} from './helpers.mjs';
+import {setup, tokens, responseText} from './helpers.mjs';
 
 // Independent reviewed route fixtures, not generated from the production registry.
 export const cases = [
@@ -39,7 +39,7 @@ for (const task of cases) {
     assert.deepEqual(buildReadRequest(task.id, profile, {}, {hierUnitId: 7}).body, task.mode === 'body' ? {hierUnitId: 7} : {searchCriteria: 'where equals(hierUnitId,7)'});
   });
   test(`${task.id}: flags/JSON/file/stdin each make one scoped call, no pagination/dependencies or transformation`, async t => {
-    const requests = [], response = '{"items":[{"hierUnitId":7,"name":{"1":"PRIVATE-NAME"},"options":"00001","optionsExt":{"newBit":true},"newField":9007199254740993,"panelConfiguration":[{"futureField":null}]}],"hasMore":true}';
+    const requests = [], response = '{"items":[{"hierUnitId":7,"objectNum":1,"lineNum":1,"name":{"1":"PRIVATE-NAME"},"options":"00001","optionsExt":{"newBit":true},"newField":9007199254740993,"panelConfiguration":[{"futureField":null}]}],"hasMore":true}';
     const s = await setup(t, async (req, res) => {
       const chunks = []; for await (const chunk of req) chunks.push(chunk);
       requests.push({url: req.url, body: JSON.parse(Buffer.concat(chunks).toString())});
@@ -53,7 +53,7 @@ for (const task of cases) {
       [['--json', JSON.stringify(controls)], ''], [['--file', file], ''], [['--file', '-'], JSON.stringify(controls)],
     ]) {
       const r = await s.run([...task.command, '--hier-unit-id', '7', '--quiet', ...args], input);
-      assert.equal(r.code, 0, r.stderr); assert.equal(r.stdout, response);
+      assert.equal(r.code, 0, r.stderr); assert.equal(await responseText(r), response);
     }
     assert.equal(requests.length, 4);
     const expected = task.mode === 'body' ? {...controls, hierUnitId: 7} : {...controls, searchCriteria: 'where (equals(hierUnitId,7) and (equals(objectNum,1)))'};
@@ -83,7 +83,7 @@ for (const task of cases) {
   });
   test(`${task.id}: explicit v1 stays v1; HTTP errors never fallback/retry or learn`, async t => {
     let status = 200;
-    const body = '{"items":[{"futureField":true}]}';
+    const body = '{"items":[{"hierUnitId":7,"objectNum":1,"lineNum":1,"futureField":true}]}';
     const s = await setup(t, (_, res) => {res.writeHead(status); res.end(body);});
     const {catalogue, target} = await ready(s);
     let result = await s.run([...task.command, '--hier-unit-id', '7', '--api-version', 'v1', '--quiet']);
@@ -92,12 +92,12 @@ for (const task of cases) {
     const before = await readFile(catalogue.file, 'utf8');
     for (const code of [400, 401, 403, 429, 503]) {
       status = code; result = await s.run([...task.command, '--hier-unit-id', '7', '--quiet']);
-      assert.equal(result.code, code === 401 ? 9 : 11); assert.equal(result.stdout, body);
+      assert.equal(result.code, code === 401 ? 9 : 11); assert.equal(await responseText(result), body);
     }
     assert.equal(s.calls.length, 6); assert.equal(await readFile(catalogue.file, 'utf8'), before);
   });
   for (const compressed of [false, true]) test(`${task.id}: large ${compressed ? 'gzip' : 'plain'} record exported exactly and structurally observed`, async t => {
-    const body = Buffer.from(JSON.stringify({items: [{futureField: 'x'.repeat(32 * 1024), nested: [{enabled: true}]}]}));
+    const body = Buffer.from(JSON.stringify({items: [{hierUnitId: 7, objectNum: 1, lineNum: 1, futureField: 'x'.repeat(32 * 1024), nested: [{enabled: true}]}]}));
     const s = await setup(t, (_, res) => {if (compressed) res.setHeader('Content-Encoding', 'gzip'); res.end(compressed ? gzipSync(body) : body);});
     const {catalogue, target} = await ready(s);
     const result = await s.run([...task.command, '--hier-unit-id', '7', '--quiet']); assert.equal(result.code, 0, result.stderr);
